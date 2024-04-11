@@ -10,7 +10,8 @@ function App() {
 
   useEffect(() => {
     let sentences = [
-      "Hello, how high are you?",
+      "Hello...",
+      "How high are you?",
       "Sorry",
       "I meant to ask",
       "Hi..",
