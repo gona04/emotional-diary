@@ -51,6 +51,18 @@ svg#microphone {
  gap:2rem;
 }
 
+
+audio {
+  position: absolute;
+  top:60%;
+  left:38%;
+}
+
+.remove-btn-style {
+  position: absolute;
+  left:62%;
+  bottom:34%;
+}
 .bgInput {
   width: 80vw;
   border:none;
@@ -67,6 +79,13 @@ svg#microphone {
 .remove-btn-style {
   background-color: transparent;
   border: none;
+}
+.audio-recorder.recording img {
+  display: none;
+}
+
+.audio-recorder.recording {
+  padding:1rem;
 }
 
 @keyframes pulse {
