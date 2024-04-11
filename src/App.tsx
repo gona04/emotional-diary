@@ -30,7 +30,7 @@ function App() {
           setTimeout(() => {
             setCurrentSentence(index + 1);
           }, 1000);
-          if(sentences[index] === "feel free to share about your day with me :)") {
+          if(sentences[index] === "Feel free to share about your day with me :)") {
             setShowMicrophone(true);
           }
         };
