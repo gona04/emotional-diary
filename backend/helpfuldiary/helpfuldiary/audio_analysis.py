@@ -1,9 +1,10 @@
 import requests
 
 class EmotionAnalyzer:
-    API_URL = "https://api-inference.huggingface.co/models/ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
-    HEADERS = {"Authorization": "Bearer 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"}
-
+    # API_URL = "https://api-inference.huggingface.co/models/ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+    # HEADERS = {"Authorization": "Bearer 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"}
+    API_URL = "https://api-inference.huggingface.co/models/DunnBC22/wav2vec2-base-Speech_Emotion_Recognition"
+    HEADERS =  {"Authorization": "Bearer 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"}
     @staticmethod
     def analyze_audio(audio_data):
         try:
