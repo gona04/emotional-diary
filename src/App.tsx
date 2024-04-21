@@ -27,7 +27,16 @@ function App() {
       {!showInput && (
         <div className="background-pink">
           {!showMicrophone && (
-            <div>{currentSentence < sentences.length && sentences[currentSentence]}</div>
+            <div>
+              {currentSentence < sentences.length && sentences[currentSentence]}
+            <SpeechSynthesisComponent
+          sentences={sentences}
+          currentSentence={currentSentence}
+          setCurrentSentence={setCurrentSentence}
+          setShowMicrophone={setShowMicrophone}
+          />
+            </div>
+            
           )}
           {showMicrophone && (
             <div className="mic-coverer">
@@ -42,17 +51,14 @@ function App() {
           )}
         </div>
       )}
-      <RecorderComponent />
       {
-        !showMicrophone &&
-        <SpeechSynthesisComponent
-        sentences={sentences}
-        currentSentence={currentSentence}
-        setCurrentSentence={setCurrentSentence}
-        setShowMicrophone={setShowMicrophone}
-      />
+        showInput &&
+        <>
+          <RecorderComponent />
+          {/* <AudioToTextComponent isRecording={false} /> */}
+        </>
+        
       }
-      {showInput && <AudioToTextComponent isRecording={false} />}
     </div>
   );
 }
