@@ -14,7 +14,7 @@
 }
 
 .App:active svg#microphone {
-  transform: translateX(-450%);
+  transform: translateY(-5%);
   animation: remove-all 5s;
 }
 
@@ -24,7 +24,7 @@ svg#microphone {
 
 .mic-coverer {
   background-color: rgb(244, 180, 190);
-  padding: 15rem;
+  /* padding: 15rem; */
   border-radius: 50%;
 }
 
@@ -32,7 +32,7 @@ svg#microphone {
   background-color: rgb(243, 161, 175);
   padding: 10rem;
   border-radius: 50%;
-  animation: pulse 5s;
+  animation: pulse 5s infinite;
 }
 
 .microphone-icon {
