@@ -55,7 +55,6 @@ function App() {
         showInput &&
         <>
           <RecorderComponent />
-          {/* <AudioToTextComponent isRecording={false} /> */}
         </>
         
       }

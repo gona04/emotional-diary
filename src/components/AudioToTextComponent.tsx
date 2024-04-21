@@ -1,19 +1,29 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import useSpeechToText from "../hooks/AudioToTextHook";
 
-function AudioToTextComponent(props: { isRecording: any }) {
-  const [textInput, setTextInput] = useState("");
-  const [isListening, transcript, startListening, stopListening] =
-  useSpeechToText({ options: { continuous: true }, isRecording: props.isRecording });
+interface AudioToTextProps {
+  isRecording: boolean;
+}
 
-  const startStopListening = () => {
-    isListening ? stopVoiceInput() : startListening();
+function AudioToTextComponent({ isRecording }: AudioToTextProps) {
+  const [textInput, setTextInput] = useState("");
+
+  const [, transcript, , stopListening] = useSpeechToText({
+    options: { continuous: true },
+    isRecording: isRecording,
+  });
+
+  const handleStopVoiceInput = () => {
+    stopListening();
   };
 
-  const stopVoiceInput = () => {
-    setTextInput((prevVal: any) => prevVal + (transcript.length ? (prevVal.length ? " " : "") + transcript : ''))
-    stopListening()
-  }
+  // Update textInput whenever there's a new transcript
+  React.useEffect(() => {
+    if (transcript) {
+      setTextInput(transcript);
+    }
+  }, [transcript]);
+
   return (
     <div>
       <textarea
@@ -22,8 +32,9 @@ function AudioToTextComponent(props: { isRecording: any }) {
         cols={30}
         rows={10}
         placeholder="Press the record icon to have some text generated"
-        disabled={isListening}
-        value={isListening ? textInput + (transcript.length ? (textInput.length ? ' ' : '') + transcript : '') : textInput}
+        disabled={true}
+        value={textInput}
+        onChange={() => {}}
       ></textarea>
     </div>
   );

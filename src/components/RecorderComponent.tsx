@@ -4,12 +4,11 @@ import { uploadAudio } from "../services/audioservices";
 import AudioToTextComponent from "./AudioToTextComponent";
 
 function RecorderComponent() {
-  const [audioData, setAudioData] = useState<Blob | null>(null);
-  const [displayRecorder, setDisplayrecorder] = useState<boolean>(false);
+  const [audioData, setAudioData] = useState(null);
+  const [displayRecorder, setDisplayrecorder] = useState(false);
 
   const recorderControls = useAudioRecorder();
   useEffect(() => {
-    console.log(recorderControls.isRecording)
     if (recorderControls.isRecording) {
       setDisplayrecorder(true);
     }
@@ -18,7 +17,7 @@ function RecorderComponent() {
     }
   }, [recorderControls.isRecording, recorderControls.recordingBlob]);
 
-  const addAudioElement = (blob: Blob) => {
+  const addAudioElement = (blob: any) => {
     setAudioData(blob);
   };
 
@@ -71,7 +70,7 @@ function RecorderComponent() {
           <path d="M0 128C0 92.7 28.7 64 64 64H320c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z" />
         </svg>
       )}
-    <AudioToTextComponent isRecording={recorderControls.isRecording}/>
+      <AudioToTextComponent isRecording={recorderControls.isRecording} />
       {audioData && (
         <div className="setting-text-area">
           <div>
@@ -80,7 +79,7 @@ function RecorderComponent() {
               className="remove-btn-style"
               title="Delete audio"
             >
-              delete
+              Delete
             </button>
           </div>
           <audio
