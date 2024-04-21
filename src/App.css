@@ -2,6 +2,7 @@
   color: rgb(238, 115, 136);
   background-color: #ffff;
 }
+
 .background-pink {
   display: flex;
   height: 100vh;
@@ -11,6 +12,7 @@
   padding: 2rem;
   background-color: pink;
 }
+
 .App:active svg#microphone {
   transform: translateX(-450%);
   animation: remove-all 5s;
@@ -25,6 +27,7 @@ svg#microphone {
   padding: 15rem;
   border-radius: 50%;
 }
+
 .mic-cover {
   background-color: rgb(243, 161, 175);
   padding: 10rem;
@@ -44,58 +47,61 @@ svg#microphone {
 }
 
 .microphone-new-place {
- display: flex;
- justify-content: center;
- align-items: center;
- height: 100vh;
- gap:2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  gap: 2rem;
+  position: relative; /* Ensure relative positioning for absolute elements */
 }
 
-
-audio {
-  position: absolute;
-  top:60%;
-  left:38%;
+.audio-recorder.recording img {
+  display: none;
 }
 
-.remove-btn-style {
-  position: absolute;
-  left:62%;
-  bottom:34%;
-}
-.bgInput {
-  width: 80vw;
-  border:none;
-  border-bottom:1px solid rgb(238, 115, 136);
-  font-size: 2rem;
-  word-break: break-all;
-  word-wrap: break-word;
+.audio-recorder.recording {
+  padding: 1rem;
 }
 
-.bgInput:focus {
-  outline: none;
+.setting-text-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  margin-top: 2rem; 
+  text-align: end;
 }
 
 .remove-btn-style {
   background-color: transparent;
   border: none;
 }
-.audio-recorder.recording img {
-  display: none;
+
+.audio-player {
+  display: none; /* Hide audio player initially */
 }
 
-.audio-recorder.recording {
-  padding:1rem;
+/* Responsive styles */
+@media (max-width: 768px) {
+  .mic-cover {
+      padding: 8rem; /* Reduce padding for smaller screens */
+  }
+}
+
+@media (max-width: 576px) {
+  .mic-cover {
+      padding: 5rem; /* Further reduce padding for smaller screens */
+  }
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(1);
+      transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+      transform: scale(1.1);
   }
   100% {
-    transform: scale(1);
+      transform: scale(1);
   }
 }
