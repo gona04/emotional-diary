@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import useSpeechToText from "../hooks/AudioToTextHook";
 
 interface AudioToTextProps {
   isRecording: boolean;
+  deletePressed: boolean;
 }
 
-function AudioToTextComponent({ isRecording }: AudioToTextProps) {
+function AudioToTextComponent({ isRecording, deletePressed }: AudioToTextProps) {
   const [textInput, setTextInput] = useState("");
 
   const [, transcript, , stopListening] = useSpeechToText({
@@ -23,6 +24,12 @@ function AudioToTextComponent({ isRecording }: AudioToTextProps) {
       setTextInput(transcript);
     }
   }, [transcript]);
+
+  useEffect(() => {
+    if(deletePressed) {
+      setTextInput(" ");
+    }
+  }, [deletePressed])
 
   return (
     <div>
