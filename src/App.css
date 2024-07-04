@@ -35,6 +35,10 @@ svg#microphone {
   animation: pulse 5s infinite;
 }
 
+button.microphone-icon {
+  border: none;
+}
+
 .microphone-icon {
   color: rgb(239, 87, 113);
   background-color: rgb(239, 141, 156);
