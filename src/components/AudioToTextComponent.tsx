@@ -9,7 +9,7 @@ interface AudioToTextProps {
 function AudioToTextComponent({ isRecording, deletePressed }: AudioToTextProps) {
   const [textInput, setTextInput] = useState("");
 
-  const [transcript , stopListening] = useSpeechToText({
+  const [transcript ] = useSpeechToText({
     options: { continuous: true },
     isRecording: isRecording,
   });

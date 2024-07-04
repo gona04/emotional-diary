@@ -13,7 +13,7 @@ const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
     recognitionRef.current = new (window as any).webkitSpeechRecognition();
     const recognition: any = recognitionRef.current;
     recognition.interimResults = props.options.interimResults || true;
-    recognition.lang = props.options.lang || "en-US";
+  recognition.lang = props.options.lang || "en-US";
     recognition.continuous = props.options.continuous || false;
 
     if ("webkitSpeechGrammarList" in window) {
