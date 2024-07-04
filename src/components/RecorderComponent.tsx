@@ -3,27 +3,31 @@ import { AudioRecorder, useAudioRecorder } from "react-audio-voice-recorder";
 import { uploadAudio } from "../services/audioservices";
 import AudioToTextComponent from "./AudioToTextComponent";
 
-function RecorderComponent() {
-  const [audioData, setAudioData] = useState(null);
-  const [displayRecorder, setDisplayrecorder] = useState(false);
+const RecorderComponent: React.FC = () => {
+  const [audioData, setAudioData] = useState<Blob | null>(null);
+  const [displayRecorder, setDisplayRecorder] = useState(false);
   const [deletePressed, setDeletePressed] = useState(false);
 
   const recorderControls = useAudioRecorder();
-  useEffect(() => {
-    if (recorderControls.isRecording) {
-      setDisplayrecorder(true);
-    }
-    if (recorderControls.recordingBlob !== undefined) {
-      setDisplayrecorder(false);
-    }
-  }, [recorderControls.isRecording, recorderControls.recordingBlob]);
 
-  const addAudioElement = (blob: any) => {
+  useEffect(() => {
+    setDisplayRecorder(recorderControls.isRecording);
+  }, [recorderControls.isRecording]);
+
+  useEffect(() => {
+    if (recorderControls.recordingBlob !== undefined) {
+      setDisplayRecorder(false);
+    }
+  }, [recorderControls.recordingBlob]);
+
+  const addAudioElement = (blob: Blob) => {
     setAudioData(blob);
   };
 
   const sendAudio = () => {
-    uploadAudio(audioData);
+    if (audioData) {
+      uploadAudio(audioData);
+    }
   };
 
   const deleteAudio = () => {
@@ -33,7 +37,7 @@ function RecorderComponent() {
 
   return (
     <div className="microphone-new-place">
-      {displayRecorder && (
+      {displayRecorder ? (
         <AudioRecorder
           onRecordingComplete={addAudioElement}
           recorderControls={recorderControls}
@@ -48,8 +52,7 @@ function RecorderComponent() {
             audioBitsPerSecond: 128000,
           }}
         />
-      )}
-      {!displayRecorder && (
+      ) : (
         <svg
           onClick={recorderControls.startRecording}
           xmlns="http://www.w3.org/2000/svg"
@@ -72,18 +75,16 @@ function RecorderComponent() {
           <path d="M0 128C0 92.7 28.7 64 64 64H320c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z" />
         </svg>
       )}
-      <AudioToTextComponent isRecording={recorderControls.isRecording} deletePressed={deletePressed}/>
+      <AudioToTextComponent isRecording={recorderControls.isRecording} deletePressed={deletePressed} />
       {audioData && (
         <div className="setting-text-area">
-          <div>
-            <button
-              onClick={deleteAudio}
-              className="remove-btn-style"
-              title="Delete audio"
-            >
-              Delete
-            </button>
-          </div>
+          <button
+            onClick={deleteAudio}
+            className="remove-btn-style"
+            title="Delete audio"
+          >
+            Delete
+          </button>
           <audio
             className="audio-player"
             src={URL.createObjectURL(audioData)}
@@ -104,6 +105,6 @@ function RecorderComponent() {
       </svg>
     </div>
   );
-}
+};
 
 export default RecorderComponent;
