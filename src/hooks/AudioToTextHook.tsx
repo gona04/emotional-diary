@@ -1,18 +1,65 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const useSpeechToText = ({ options, isRecording }: { options: any; isRecording: boolean }) => {
+interface Options {
+  interimResults?: boolean;
+  lang?: string;
+  continuous?: boolean;
+  resetTranscriptOnStop?: boolean;
+}
+
+interface UseSpeechToTextProps {
+  options: Options;
+  isRecording: boolean;
+}
+
+interface SpeechRecognition extends EventTarget {
+  start: () => void;
+  stop: () => void;
+  onresult: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  interimResults: boolean;
+  lang: string;
+  continuous: boolean;
+  grammars: SpeechGrammarList;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechGrammarList {
+  addFromString: (string: string, weight: number) => void;
+}
+
+const useSpeechToText = ({ options, isRecording }: UseSpeechToTextProps) => {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState<string>("");
-  const recognitionRef = useRef<any | null>(null);
+  const [transcript, setTranscript] = useState("");
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const initializeRecognition = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      console.error("Web speech API is not supported");
+      console.error("Web Speech API is not supported");
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition: SpeechRecognition = new SpeechRecognition();
     recognition.interimResults = options.interimResults ?? true;
     recognition.lang = options.lang ?? "en-US";
     recognition.continuous = options.continuous ?? false;
@@ -24,15 +71,16 @@ const useSpeechToText = ({ options, isRecording }: { options: any; isRecording: 
       recognition.grammars = speechRecognitionList;
     }
 
-    recognition.onresult = (event: any) => {
-      const currentTranscript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
+    recognition.onresult = (event: Event) => {
+      const speechEvent = event as SpeechRecognitionEvent;
+      const currentTranscript = Array.from(speechEvent.results)
+        .map((result) => result[0].transcript)
         .join("");
       setTranscript(currentTranscript);
     };
 
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
+    recognition.onerror = (event: Event) => {
+      console.error("Speech recognition error:", event);
     };
 
     recognition.onend = () => {
@@ -43,7 +91,7 @@ const useSpeechToText = ({ options, isRecording }: { options: any; isRecording: 
     };
 
     recognitionRef.current = recognition;
-  }, [options.continuous, options.interimResults, options.lang, options.resetTranscriptOnStop]);
+  }, [options.interimResults, options.lang, options.continuous, options.resetTranscriptOnStop]);
 
   useEffect(() => {
     initializeRecognition();
