@@ -9,14 +9,14 @@ interface AudioToTextProps {
 function AudioToTextComponent({ isRecording, deletePressed }: AudioToTextProps) {
   const [textInput, setTextInput] = useState("");
 
-  const [, transcript, , stopListening] = useSpeechToText({
+  const [transcript , stopListening] = useSpeechToText({
     options: { continuous: true },
     isRecording: isRecording,
   });
 
-  const handleStopVoiceInput = () => {
-    stopListening();
-  };
+  // const handleStopVoiceInput = () => {
+  //   stopListening();
+  // };
 
   // Update textInput whenever there's a new transcript
   React.useEffect(() => {
