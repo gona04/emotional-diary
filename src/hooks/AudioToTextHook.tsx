@@ -1,37 +1,34 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
-const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
+const useSpeechToText = ({ options, isRecording }: { options: any; isRecording: boolean }) => {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState<any>("");
-  const recognitionRef: any = useRef(null);
+  const [transcript, setTranscript] = useState<string>("");
+  const recognitionRef = useRef<any | null>(null);
 
-  useEffect(() => {
-    if (!(`webkitSpeechRecognition` in window)) {
+  const initializeRecognition = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
       console.error("Web speech API is not supported");
       return;
     }
-    recognitionRef.current = new (window as any).webkitSpeechRecognition();
-    const recognition: any = recognitionRef.current;
-    recognition.interimResults = props.options.interimResults || true;
-  recognition.lang = props.options.lang || "en-US";
-    recognition.continuous = props.options.continuous || false;
+
+    const recognition = new SpeechRecognition();
+    recognition.interimResults = options.interimResults ?? true;
+    recognition.lang = options.lang ?? "en-US";
+    recognition.continuous = options.continuous ?? false;
 
     if ("webkitSpeechGrammarList" in window) {
-      const grammar =
-        "#JSGF V1.0; grammar punctuation; public <punc> = . | , | ? | ! | ; | : ;";
-      const speechRecognitionList = new (
-        window as any
-      ).webkitSpeechGrammarList();
+      const grammar = "#JSGF V1.0; grammar punctuation; public <punc> = . | , | ? | ! | ; | : ;";
+      const speechRecognitionList = new (window as any).webkitSpeechGrammarList();
       speechRecognitionList.addFromString(grammar, 1);
       recognition.grammars = speechRecognitionList;
     }
 
     recognition.onresult = (event: any) => {
-      let text = "";
-      for (let i = 0; i < event.results.length; i++) {
-        text += event.results[i][0].transcript;
-      }
-      setTranscript(text);
+      const currentTranscript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join("");
+      setTranscript(currentTranscript);
     };
 
     recognition.onerror = (event: any) => {
@@ -39,39 +36,47 @@ const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
     };
 
     recognition.onend = () => {
-      setTranscript("");
       setIsListening(false);
+      if (options.resetTranscriptOnStop) {
+        setTranscript("");
+      }
     };
 
-    return () => {
-      recognition.stop();
-    };
-  }, [props.isRecording]); // Add props.isRecording to the dependency array
+    recognitionRef.current = recognition;
+  }, [options.continuous, options.interimResults, options.lang, options.resetTranscriptOnStop]);
 
   useEffect(() => {
-    // Start or stop listening based on the props.isRecording prop
-    if (props.isRecording) {
+    initializeRecognition();
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [initializeRecognition]);
+
+  useEffect(() => {
+    if (isRecording) {
       startListening();
     } else {
       stopListening();
     }
-  }, [props.isRecording]); // Add props.isRecording to the dependency array
+  }, [isRecording]);
 
-  const startListening = () => {
+  const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
       recognitionRef.current.start();
       setIsListening(true);
     }
-  };
+  }, [isListening]);
 
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
     }
-  };
+  }, [isListening]);
 
-  return [isListening, transcript, startListening, stopListening];
+  return { isListening, transcript, startListening, stopListening };
 };
 
 export default useSpeechToText;
