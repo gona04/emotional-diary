@@ -1,7 +1,8 @@
 import { useState } from 'react';
-// import RecorderComponent from './components/RecorderComponent';
+import RecorderComponent from './components/RecorderComponent';
 import './App.css';
 import SpeechSynthesisComponent from './components/SpeechSynthesisComponent';
+
 
 function App() {
   const [currentSentence, setCurrentSentence] = useState(0);
@@ -55,8 +56,7 @@ function App() {
       {
         showInput &&
         <>
-        Hello
-          {/* <RecorderComponent /> */}
+          <RecorderComponent />
         </>
         
       }
