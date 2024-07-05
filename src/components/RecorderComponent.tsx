@@ -18,12 +18,10 @@ const RecorderComponent: React.FC = () => {
   }, [recorderControls.recordingBlob]);
 
   const addAudioElement = (blob: Blob) => {
-    console.log("AUDIO DATA: ", blob);
     setAudioData(blob);
   };
 
   const sendAudio = () => {
-    debugger;
     if (audioData) {
       uploadAudio(audioData);
     }

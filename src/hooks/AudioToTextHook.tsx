@@ -1,27 +1,28 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
-const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
+const useSpeechToText = (props: { options: any; isRecording: boolean }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState<any>("");
   const recognitionRef: any = useRef(null);
 
+  // Destructure options for clarity and to easily add them to the dependency array
+  const { continuous, interimResults, lang } = props.options;
+
   useEffect(() => {
-    if (!(`webkitSpeechRecognition` in window)) {
+    if (!("webkitSpeechRecognition" in window)) {
       console.error("Web speech API is not supported");
       return;
     }
     recognitionRef.current = new (window as any).webkitSpeechRecognition();
     const recognition: any = recognitionRef.current;
-    recognition.interimResults = props.options.interimResults || true;
-    recognition.lang = props.options.lang || "en-US";
-    recognition.continuous = props.options.continuous || false;
+    recognition.interimResults = interimResults || true;
+    recognition.lang = lang || "en-US";
+    recognition.continuous = continuous || false;
 
     if ("webkitSpeechGrammarList" in window) {
       const grammar =
         "#JSGF V1.0; grammar punctuation; public <punc> = . | , | ? | ! | ; | : ;";
-      const speechRecognitionList = new (
-        window as any
-      ).webkitSpeechGrammarList();
+      const speechRecognitionList = new (window as any).webkitSpeechGrammarList();
       speechRecognitionList.addFromString(grammar, 1);
       recognition.grammars = speechRecognitionList;
     }
@@ -46,7 +47,21 @@ const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
     return () => {
       recognition.stop();
     };
-  }, [props.isRecording]); // Add props.isRecording to the dependency array
+  }, [props.isRecording, continuous, interimResults, lang]);
+
+  const startListening = useCallback(() => {
+    if (recognitionRef.current && !isListening) {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  }, [isListening]); 
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [isListening]); 
 
   useEffect(() => {
     // Start or stop listening based on the props.isRecording prop
@@ -55,21 +70,7 @@ const useSpeechToText = (props:{options: any, isRecording: boolean}) => {
     } else {
       stopListening();
     }
-  }, [props.isRecording]); // Add props.isRecording to the dependency array
-
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
+  }, [props.isRecording, startListening, stopListening]); // Updated dependency array
 
   return [isListening, transcript, startListening, stopListening];
 };
