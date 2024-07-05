@@ -22,7 +22,6 @@ const RecorderComponent: React.FC = () => {
   };
 
   const sendAudio = () => {
-    debugger;
     if (audioData) {
       uploadAudio(audioData);
     }
