@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import RecorderComponent from './components/RecorderComponent';
+// import RecorderComponent from './components/RecorderComponent';
 import './App.css';
 import SpeechSynthesisComponent from './components/SpeechSynthesisComponent';
 
@@ -7,6 +7,7 @@ function App() {
   const [currentSentence, setCurrentSentence] = useState(0);
   const [showInput, setShowInput] = useState(false);
   const [showMicrophone, setShowMicrophone] = useState(false);
+  //The sentences that the bot will say
   const sentences = [
     "Hello...",
     `How high are you?`,
@@ -17,6 +18,7 @@ function App() {
     "Feel free to share about your day with me :)"
   ];
 
+  //When this is clicked, the input UI will be shown for the user to record their voice
   const handleNewUI = () => {
     setShowInput(true);
   };
@@ -53,7 +55,8 @@ function App() {
       {
         showInput &&
         <>
-          <RecorderComponent />
+        Hello
+          {/* <RecorderComponent /> */}
         </>
         
       }

@@ -1,46 +1,51 @@
-import React, { useEffect, useState } from "react";
-import useSpeechToText from "../hooks/AudioToTextHook";
+// import React, { useEffect, useState } from "react";
+// import useSpeechToText from "../hooks/AudioToTextHook";
 
-interface AudioToTextProps {
-  isRecording: boolean;
-  deletePressed: boolean;
-}
+// interface AudioToTextProps {
+//   isRecording: boolean;
+//   deletePressed: boolean;
+// }
 
-function AudioToTextComponent({ isRecording, deletePressed }: AudioToTextProps) {
-  const [textInput, setTextInput] = useState("");
+// function AudioToTextComponent({ isRecording, deletePressed }: AudioToTextProps) {
+//   const [textInput, setTextInput] = useState("");
 
-  const transcript = useSpeechToText({
-    options: { continuous: true },
-    isRecording: isRecording,
-  });
+//   const [, transcript, , stopListening] = useSpeechToText({
+//     options: { continuous: true },
+//     isRecording: isRecording,
+//   });
 
-  // Update textInput whenever there's a new transcript
-  React.useEffect(() => {
-    if (transcript) {
-      setTextInput(transcript.transcript);
-    }
-  }, [transcript]);
+//   const handleStopVoiceInput = () => {
+//     stopListening();
+//   };
 
-  useEffect(() => {
-    if(deletePressed) {
-      setTextInput(" ");
-    }
-  }, [deletePressed])
+//   // Update textInput whenever there's a new transcript
+//   React.useEffect(() => {
+//     if (transcript) {
+//       setTextInput(transcript);
+//     }
+//   }, [transcript]);
 
-  return (
-    <div>
-      <textarea
-        name="generatedText"
-        id="generatedText"
-        cols={30}
-        rows={10}
-        placeholder="Press the record icon to have some text generated"
-        disabled={true}
-        value={textInput}
-        onChange={() => {}}
-      ></textarea>
-    </div>
-  );
-}
+//   useEffect(() => {
+//     if(deletePressed) {
+//       setTextInput(" ");
+//     }
+//   }, [deletePressed])
 
-export default AudioToTextComponent;
+//   return (
+//     <div>
+//       <textarea
+//         name="generatedText"
+//         id="generatedText"
+//         cols={30}
+//         rows={10}
+//         placeholder="Press the record icon to have some text generated"
+//         disabled={true}
+//         value={textInput}
+//         onChange={() => {}}
+//       ></textarea>
+//     </div>
+//   );
+// }
+
+// export default AudioToTextComponent;
+export default {};
