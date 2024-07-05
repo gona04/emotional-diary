@@ -47,21 +47,21 @@ const useSpeechToText = (props: { options: any; isRecording: boolean }) => {
     return () => {
       recognition.stop();
     };
-  }, [props.isRecording, continuous, interimResults, lang]); // Updated dependency array
+  }, [props.isRecording, continuous, interimResults, lang]);
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
       recognitionRef.current.start();
       setIsListening(true);
     }
-  }, [isListening]); // useCallback with dependencies
+  }, [isListening]); 
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current && isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
     }
-  }, [isListening]); // useCallback with dependencies
+  }, [isListening]); 
 
   useEffect(() => {
     // Start or stop listening based on the props.isRecording prop
