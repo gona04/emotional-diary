@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import RecorderComponent from './components/RecorderComponent';
 import './App.css';
 import SpeechSynthesisComponent from './components/SpeechSynthesisComponent';
+import Chatbot from './components/Chatbot';
 
 
 function App() {
@@ -53,13 +53,11 @@ function App() {
           )}
         </div>
       )}
-      {
-        showInput &&
-        <>
-          <RecorderComponent />
-        </>
-        
-      }
+      {showInput && (
+        <div style={{ padding: '1rem' }}>
+          <Chatbot />
+        </div>
+      )}
     </div>
   );
 }

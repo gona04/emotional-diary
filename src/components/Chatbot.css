@@ -1,0 +1,3 @@
+.chat-body::-webkit-scrollbar { height: 8px; width: 8px }
+.chat-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 8px }
+.chat-container, .chat-input-area input, .chat-input-area button { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial }

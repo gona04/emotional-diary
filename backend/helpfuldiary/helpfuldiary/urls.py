@@ -16,9 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import upload_audio
 
+# Recording/upload routes removed — server no longer accepts audio uploads.
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('upload-audio/', upload_audio, name='upload_audio'),
 ]

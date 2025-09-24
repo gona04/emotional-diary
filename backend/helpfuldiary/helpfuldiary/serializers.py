@@ -1,7 +1,5 @@
-from rest_framework import serializers
-from .models import RecordedAudio
+"""
+Serializers for audio recording removed. Server no longer serializes or stores audio blobs.
+"""
 
-class RecordedAudioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RecordedAudio
-        fields = ['id', 'file']
+# No serializers related to RecordedAudio remain.
