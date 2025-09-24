@@ -53,11 +53,7 @@ function App() {
           )}
         </div>
       )}
-      {showInput && (
-        <div style={{ padding: '1rem' }}>
-          <Chatbot />
-        </div>
-      )}
+      {showInput && <Chatbot onClose={() => setShowInput(false)} />}
     </div>
   );
 }

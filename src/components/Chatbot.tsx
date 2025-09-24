@@ -9,7 +9,11 @@ const sampleBotReplies = [
   "Thanks for sharing — small steps often help. What's one thing you can do today?",
 ];
 
-const Chatbot: React.FC = () => {
+type Props = {
+  onClose?: () => void;
+};
+
+const Chatbot: React.FC<Props> = ({ onClose }) => {
   const [messages, setMessages] = useState<Array<{ from: 'user' | 'bot'; text: string }>>([]);
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,8 +47,12 @@ const Chatbot: React.FC = () => {
   };
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">Diary Assistant</div>
+    <div className="chat-overlay">
+      <div className="chat-container">
+        <div className="chat-header">
+          <div>Diary Assistant</div>
+          <button className="chat-close" onClick={() => onClose && onClose()}>Close</button>
+        </div>
       <div className="chat-body" role="log">
         {messages.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.from === 'bot' ? 'bot' : 'user'}`}>
@@ -64,6 +72,7 @@ const Chatbot: React.FC = () => {
           }}
         />
         <button onClick={() => send(input)}>Send</button>
+      </div>
       </div>
     </div>
   );
