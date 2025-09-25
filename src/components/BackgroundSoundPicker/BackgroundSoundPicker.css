@@ -1,7 +1,29 @@
-.bg-sound-picker.small { padding: 0.5rem; margin-top: 1rem; }
+.bg-sound-picker.small { padding: 0; margin-top: 0; width: 100vw; left: 0; box-sizing: border-box; }
 .bg-sound-list { display: flex; gap: 0.5rem; flex-direction: column; align-items: stretch; }
 .bg-sound-item { background: rgba(255,255,255,0.06); padding: 0.5rem; border-radius: 8px; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; min-width: 200px; }
 .bg-sound-item.selected { outline: 2px solid rgba(239,87,113,0.9); }
 .bg-sound-item .label { font-weight:600; color:#333; }
 .bg-sound-item .controls button { margin-left:0.25rem }
 .bg-sound-footer { margin-top:0.75rem }
+
+.bg-sound-topbar { position: fixed; top: 0; left: 0; right: 0; display:block; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.04); z-index: 1200; }
+.bg-sound-topbar { position: fixed; top: 0; left: 0; right: 0; display:block; background: rgba(0,0,0,0.28); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(0,0,0,0.25); z-index: 1200; }
+.bg-sound-topbar .nav-inner { display:flex; gap:0.75rem; align-items:center; padding:0.5rem 1rem; overflow-x: auto; white-space: nowrap; }
+.nav-item { background: rgba(0,0,0,0.36); padding:0.5rem 0.85rem; border-radius:999px; display:inline-flex; gap:0.6rem; align-items:center; margin-right:0.6rem; box-shadow: 0 2px 8px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.03); }
+.nav-item .label { font-weight:700; font-size:0.95rem; color: #f8fafc }
+.nav-item .controls button { margin-left:0.4rem; background: transparent; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight:600; color: #e6eef8 }
+.nav-item .controls .btn-preview { background: rgba(255,255,255,0.03); color: #e6eef8 }
+.nav-item .controls .btn-use { background: #7c3aed; color: #fff }
+.nav-item .controls .btn-preview:hover { transform: translateY(-1px); }
+.nav-item .controls .btn-use:hover { opacity: 0.95 }
+.nav-item.previewing { box-shadow: 0 6px 20px rgba(79,70,229,0.12); transform: translateY(-2px); }
+.sample-label { font-size: 11px; opacity: 0.85; margin-left: 8px; color: rgba(255,255,255,0.75) }
+
+/* responsive: center items on large screens */
+@media (min-width: 900px) {
+	.bg-sound-topbar .nav-inner { justify-content: center; max-width: 1200px; margin: 0 auto; }
+}
+
+/* ensure content below navbar isn't hidden; main app should add padding-top equal to navbar height (approx 64px) */
+.upload-sample .label { font-size:0.75rem; opacity:0.85 }
+.upload-sample .controls { display:flex; align-items:center }
