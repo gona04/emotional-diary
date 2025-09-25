@@ -6,30 +6,35 @@
 .bg-sound-item .controls button { margin-left:0.25rem }
 .bg-sound-footer { margin-top:0.75rem }
 
-.bg-sound-topbar { position: fixed; top: 0; left: 0; right: 0; display:block; z-index: 1200; }
+.bg-sound-topbar { position: fixed; top: 12px; left: 12px; right: 12px; display:block; z-index: 1400; }
 .bg-sound-topbar {
-	position: fixed; top: 0; left: 0; right: 0; display:block; z-index: 1200;
-	/* baby-pink very transparent navbar + variables */
-	--nav-primary: rgba(255, 182, 193, 0.06); /* baby pink, very transparent */
-	--nav-accent: rgb(217, 48, 95); /* darker pink accent */
-	--nav-accent-selected: rgb(80, 12, 30); /* darker pink near-black but keeps warm tone */
-	--nav-item-bg: rgba(217, 48, 95, 0.20); /* slightly darker button background */
-	--nav-item-bg-hover: rgba(217, 48, 95, 0.36);
-	--nav-text: #ffffff;
-	/* translucent background with subtle blur */
-	background: linear-gradient(180deg, rgba(255,182,193,0.06), rgba(255,182,193,0.04));
-	backdrop-filter: blur(6px) saturate(110%);
-	-webkit-backdrop-filter: blur(6px) saturate(110%);
-	border-bottom: 1px solid rgba(0,0,0,0.04);
+	position: fixed; top: 12px; left: 12px; right: 12px; display:block; z-index: 1400;
+	/* baby-pink modernized variables */
+		--nav-bg-start: rgba(255, 182, 193, 0.16); /* slightly lighter */
+		--nav-bg-end: rgba(255, 182, 193, 0.08);
+		--nav-accent: #ff6fa1; /* lighter baby pink */
+		--nav-accent-strong: #ff4f86; /* stronger for active */
+		--nav-accent-selected: var(--nav-accent-strong);
+		--nav-fore: rgba(255,255,255,0.98);
+	--nav-item-bg: rgba(255,255,255,0.04);
+	--nav-item-bg-hover: rgba(255,255,255,0.08);
+	/* rounded glass container */
+	background: linear-gradient(180deg, var(--nav-bg-start), var(--nav-bg-end));
+	border-radius: 14px;
+	padding: 10px 14px;
+	backdrop-filter: blur(10px) saturate(120%);
+	-webkit-backdrop-filter: blur(10px) saturate(120%);
+	box-shadow: 0 8px 30px rgba(20,20,30,0.12), inset 0 1px 0 rgba(255,255,255,0.02);
+	border: 1px solid rgba(255,255,255,0.06);
 }
-.bg-sound-topbar .nav-inner { display:flex; gap:0.6rem; align-items:center; padding:1rem 1.25rem; overflow-x: auto; white-space: nowrap; height:72px; }
+.bg-sound-topbar .nav-inner { display:flex; gap:0.75rem; align-items:center; padding:0; overflow-x: auto; white-space: nowrap; height:56px; }
 /* align left items and keep mic at right */
 .bg-sound-topbar .nav-inner { justify-content: flex-start; }
-.nav-left { display:flex; align-items:center; margin-right:auto; }
+.nav-left { display:flex; align-items:center; gap:0.5rem; margin-right:auto; }
 .nav-actions { display:flex; gap:0.5rem; margin-left: auto; align-items:center; }
-.nav-action { background: var(--nav-item-bg); padding:0.5rem 0.9rem; border-radius:6px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem; cursor:pointer; font-weight:300; color: var(--nav-accent); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
-.nav-action:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
-.nav-action.active { background: rgba(239,87,113,0.34); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.nav-action { background: transparent; padding:0.45rem 0.75rem; border-radius:10px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.25rem; border: 1px solid rgba(255,255,255,0.03); transition: transform 160ms cubic-bezier(.22,.9,.3,1), box-shadow 160ms ease, background 160ms ease; color: var(--nav-accent); font-weight:500; cursor: pointer; }
+.nav-action:hover { transform: translateY(-3px); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 10px 24px rgba(20,20,30,0.10); }
+.nav-action.active { background: rgba(255,111,161,0.14); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
 .nav-action.clicked { animation: navClickPulse 220ms ease forwards; }
 
 @keyframes navClickPulse {
@@ -37,24 +42,24 @@
 	50% { transform: scale(0.98); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
 	100% { transform: scale(1); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
 }
-.nav-item { background: var(--nav-item-bg); padding:0.5rem 0.9rem; border-radius:6px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid rgba(255,255,255,0.03); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
-.nav-item .label { font-weight:300; font-size:0.96rem; color: var(--nav-accent) }
+.nav-item { background: transparent; padding:0.45rem 0.75rem; border-radius:10px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.25rem; border: 1px solid rgba(255,255,255,0.03); transition: transform 160ms cubic-bezier(.22,.9,.3,1), box-shadow 160ms ease, background 160ms ease; }
+.nav-item .label { font-weight:500; font-size:0.95rem; color: var(--nav-accent); }
 /* Force left-side labels (Healing Pad / Snap) to always show the accent color */
 .nav-left .nav-item .label { color: var(--nav-accent) !important; }
 .nav-left .nav-item { color: var(--nav-accent) !important; }
 .nav-left .nav-item.playing { color: var(--nav-accent-selected) !important; }
 
 /* Keep button visual language consistent between nav-item and nav-action */
-.nav-action, .nav-item { font-family: inherit; border-radius: 6px; }
-.nav-action .label { color: inherit; font-weight: 300; font-size: 0.96rem; }
+.nav-action, .nav-item { font-family: inherit; }
+.nav-action .label { color: inherit; font-weight: 500; font-size: 0.95rem; }
 .nav-item .controls button { margin-left:0.4rem; background: transparent; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight:600; color: var(--nav-text) }
 .nav-item .controls .btn-preview { background: var(--nav-item-bg); color: var(--nav-text) }
 .nav-item .controls .btn-use { background: var(--nav-accent); color: var(--nav-text) }
-.nav-item:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+.nav-item:hover { transform: translateY(-3px); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 10px 24px rgba(20,20,30,0.10); }
 .nav-item .controls .btn-preview:hover { transform: translateY(-1px); }
 .nav-item .controls .btn-use:hover { opacity: 0.95 }
 .nav-item.previewing { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(0,0,0,0.26); }
-.nav-item.playing { background: rgba(239,87,113,0.34); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.nav-item.playing { background: rgba(255,111,161,0.14); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
 
 /* also apply selected color briefly during click animation state */
 .nav-action.clicked, .nav-item.clicked { color: var(--nav-accent-selected) !important; }
@@ -71,32 +76,36 @@
 .upload-sample .label { font-size:0.75rem; opacity:0.85 }
 .upload-sample .controls { display:flex; align-items:center }
 
-/* center prompt dropdown in the navbar */
 .nav-center {
 	position: absolute;
 	left: 50%;
 	top: 50%;
 	transform: translate(-50%, -50%);
-	z-index: 1250; /* above navbar content */
+	z-index: 1450; /* above navbar content */
 	pointer-events: auto;
+	display: flex;
+	align-items: center;
 }
 .nav-prompt-select {
 	appearance: none;
 	-webkit-appearance: none;
-	background: var(--nav-item-bg);
+	background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
 	color: var(--nav-accent);
-	/* remove visible border so it reads like a button */
-	border: none;
-	padding: 0.5rem 0.9rem;
-	border-radius: 6px;
+	border: 1px solid rgba(255,255,255,0.04);
+	padding: 0.55rem 1rem;
+	border-radius: 999px;
 	font-size: 0.95rem;
-	min-width: 220px;
-	box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-	transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+	min-width: 240px;
+	box-shadow: 0 6px 18px rgba(20,20,30,0.10);
+	transition: transform 140ms cubic-bezier(.22,.9,.3,1), box-shadow 140ms ease, background 140ms ease;
 	cursor: pointer;
+	position: relative;
 }
-.nav-prompt-select:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
-.nav-prompt-select:focus { outline: none; box-shadow: 0 10px 30px rgba(217,48,95,0.12); }
+.nav-prompt-select:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20,20,30,0.12); }
+.nav-prompt-select:focus { outline: none; box-shadow: 0 16px 44px rgba(255,79,134,0.14); }
+
+/* add a chevron via background image for the select */
+.nav-prompt-select { background-image: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; background-size: 10px 6px; }
 
 /* remove default focus ring in Firefox as well */
 .nav-prompt-select:-moz-focusring { color: transparent; text-shadow: 0 0 0 var(--nav-accent); }
