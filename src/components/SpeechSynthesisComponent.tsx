@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { useAppDispatch } from '../store/hooks';
+import { setShowMicrophone as setShowMicrophoneAction } from '../store/uiSlice';
 
 interface SpeechSynthesisComponentProps {
     sentences: string[];
@@ -8,6 +10,8 @@ interface SpeechSynthesisComponentProps {
   }
 
 const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sentences, currentSentence, setCurrentSentence, setShowMicrophone }) => {
+  const dispatch = useAppDispatch();
+
   useEffect(() => {
     const speakSentence = (index:any) => {
       if (index < sentences.length) {
@@ -19,8 +23,12 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
           setTimeout(() => {
             setCurrentSentence(index + 1);
           }, 1000);
+          // When the friendly prompt finishes, make sure the Speak UI is shown.
+          // Call the prop setter for backward-compatibility and also dispatch to the store
+          // directly so this works even when other wrappers changed the prop wiring.
           if (sentences[index] === "Feel free to share about your day with me :)") {
-            setShowMicrophone(true);
+            try { setShowMicrophone(true); } catch (e) {}
+            try { dispatch(setShowMicrophoneAction(true)); } catch (e) {}
           }
         };
         window.speechSynthesis.speak(utterance);
@@ -32,7 +40,7 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
     return () => {
       window.speechSynthesis.cancel();
     };
-  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone]);
+  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone, dispatch]);
 
   return null;
 };

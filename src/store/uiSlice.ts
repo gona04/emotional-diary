@@ -10,7 +10,7 @@ type UIState = {
 const initialState: UIState = {
   currentSentence: 0,
   showInput: false,
-  showMicrophone: false,
+  showMicrophone: true,
   showAnimation: false,
 };
 
