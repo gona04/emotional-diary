@@ -42,6 +42,17 @@ button.microphone-icon {
   border-radius: 50%;
 }
 
+/* Container that holds both intro and mic views stacked */
+.speech-content { position: relative; width: 100%; max-width: 920px; height: 420px; display:flex; align-items:center; justify-content:center; }
+
+.speech-content > div { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display:flex; align-items:center; justify-content:center; transition: opacity 5000ms cubic-bezier(.2,.7,.2,1), transform 5000ms cubic-bezier(.2,.7,.2,1); }
+.speech-content .visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.speech-content .hidden { opacity: 0; transform: translateY(-60px) scale(0.992); pointer-events: none; }
+
+/* reduce extreme padding in mic coverer to avoid layout jumps */
+.mic-cover { background-color: rgb(243, 161, 175); padding: 6rem; border-radius: 50%; animation: pulse 5s infinite; }
+
+
 .mic-cover:hover .microphone-icon {
   transform: scale(1); 
 }

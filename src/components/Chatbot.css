@@ -11,11 +11,25 @@
 	justify-content: center;
 	z-index: 9999;
 }
+
 .chat-container {
 	width: 94vw;
-	max-width: 980px;
-	height: 92vh;
+	max-width: 90vw; /* user requested */
+	height: 80vh; /* user requested */
+	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.03));
+	border-radius: 12px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+	/* cinematic chat entrance (~5s) */
+	transition: opacity 5000ms cubic-bezier(.2,.7,.2,1), transform 5000ms cubic-bezier(.2,.7,.2,1);
 }
+
+/* When wrapped by FadeMount, target final transform/opacity requested by user */
+.fade-enter .chat-container { opacity: 0; transform: translate(0, 220vh); }
+.fade-entered .chat-container, .fade-enter.fade-entered .chat-container { opacity: 1; transform: translate(0, 60vh); }
+.fade-exit .chat-container { opacity: 0; transform: translate(0, 220vh); }
 .chat-header { display:flex; justify-content:space-between; align-items:center }
 .chat-close { background: transparent; border: none; color: white; padding: 0.4rem 0.6rem; border-radius:6px }
 
