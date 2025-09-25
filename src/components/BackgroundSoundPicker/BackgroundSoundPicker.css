@@ -70,3 +70,46 @@
 /* ensure content below navbar isn't hidden; main app should add padding-top equal to navbar height (approx 64px) */
 .upload-sample .label { font-size:0.75rem; opacity:0.85 }
 .upload-sample .controls { display:flex; align-items:center }
+
+/* center prompt dropdown in the navbar */
+.nav-center {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 1250; /* above navbar content */
+	pointer-events: auto;
+}
+.nav-prompt-select {
+	appearance: none;
+	-webkit-appearance: none;
+	background: var(--nav-item-bg);
+	color: var(--nav-accent);
+	/* remove visible border so it reads like a button */
+	border: none;
+	padding: 0.5rem 0.9rem;
+	border-radius: 6px;
+	font-size: 0.95rem;
+	min-width: 220px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+	transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+	cursor: pointer;
+}
+.nav-prompt-select:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+.nav-prompt-select:focus { outline: none; box-shadow: 0 10px 30px rgba(217,48,95,0.12); }
+
+/* remove default focus ring in Firefox as well */
+.nav-prompt-select:-moz-focusring { color: transparent; text-shadow: 0 0 0 var(--nav-accent); }
+
+/* accessible visually-hidden label */
+.sr-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}

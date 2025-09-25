@@ -294,6 +294,13 @@ const BackgroundSoundPicker: React.FC = () => {
               </div>
             </div>
 
+            <div className="nav-center" aria-hidden={false}>
+              <label className="sr-only" htmlFor="nav-prompt">Start prompt</label>
+              <select id="nav-prompt" className="nav-prompt-select" aria-label="Quick prompt">
+                <option>Tell me what bothers you</option>
+              </select>
+            </div>
+
             <div className="nav-actions" role="toolbar" aria-label="actions">
               <div
                 className={`nav-action ${showMicrophone ? 'active' : ''} ${clickedId === 'speak' ? 'clicked' : ''}`}
