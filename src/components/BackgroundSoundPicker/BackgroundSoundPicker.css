@@ -104,6 +104,21 @@
 .nav-prompt-select:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20,20,30,0.12); }
 .nav-prompt-select:focus { outline: none; box-shadow: 0 16px 44px rgba(255,79,134,0.14); }
 
+/* Style dropdown options where supported (note: some browsers limit option styling) */
+.nav-prompt-select option {
+	background: linear-gradient(180deg, #fff0f2 0%, #ffeef2 100%);
+	color: rgb(239,87,113);
+}
+.nav-prompt-select option:checked,
+.nav-prompt-select option[selected] {
+	background: rgba(255,111,161,0.14);
+	color: var(--nav-accent-selected);
+}
+
+/* For WebKit-based browsers we can use -webkit-appearance none and some vendor selectors */
+select::-webkit-dropdown-button { display: none; }
+select::-webkit-calendar-picker-indicator { opacity: 0 }
+
 /* add a chevron via background image for the select */
 .nav-prompt-select { background-image: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'><path d='M1 1l4 4 4-4' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; background-size: 10px 6px; }
 
@@ -122,3 +137,32 @@
 	white-space: nowrap;
 	border: 0;
 }
+
+/* Custom select (replaces native select for consistent styling) */
+.custom-select { display: inline-block; position: relative; }
+.custom-select:focus { outline: none; }
+.custom-select-toggle { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); color: var(--nav-accent); border: 1px solid rgba(255,255,255,0.04); padding: 0.55rem 1rem; border-radius: 999px; min-width: 240px; cursor: pointer; box-shadow: 0 6px 18px rgba(20,20,30,0.10); font-size: 0.95rem; }
+.custom-select-toggle:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20,20,30,0.12); }
+.custom-select-toggle:focus { box-shadow: 0 16px 44px rgba(255,79,134,0.14); }
+.custom-select-value { flex: 1; text-align: left; }
+
+.custom-select-menu { position: absolute; left: 0; right: 0; margin-top: 8px; background: linear-gradient(180deg, #fff7fb 0%, #fff0f6 100%); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(20,20,30,0.12); z-index: 1500; list-style: none; max-height: 260px; overflow: auto; }
+.custom-select-item { padding: 8px 12px; border-radius: 8px; color: #ff4f86; font-weight: 500; cursor: pointer; }
+.custom-select-item:hover { background: rgba(255,111,161,0.06); }
+.custom-select-item.selected { background: rgba(255,111,161,0.12); color: var(--nav-accent-selected); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
+.custom-select-item.highlight { background: rgba(255,111,161,0.08); }
+
+/* ensure the custom select matches the previous nav-prompt-select sizing when used */
+.custom-select.custom-select .custom-select-toggle, .custom-select .custom-select-toggle { min-width: 240px; }
+
+/* new class for when custom select is used in nav to avoid native select styling collisions */
+.nav-prompt-custom .custom-select-toggle { min-width: 240px; }
+.nav-prompt-custom .custom-select-menu { left: 50%; transform: translateX(-50%); width: 360px; max-width: calc(100vw - 48px); }
+
+/* Defensive: hide any native <select> inside the nav center to avoid duplicate dropdowns */
+.nav-center select { display: none !important; }
+/* If old class appears, ensure it's hidden when custom version used */
+.nav-prompt-select { display: none !important; }
+
+
+

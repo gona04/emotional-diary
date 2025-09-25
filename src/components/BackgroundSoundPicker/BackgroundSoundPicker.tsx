@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './BackgroundSoundPicker.css';
+import CustomSelect from './CustomSelect';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setShowInput, setShowMicrophone, setShowAnimation } from '../../store/uiSlice';
 
@@ -310,16 +311,13 @@ const BackgroundSoundPicker: React.FC = () => {
 
             <div className="nav-center" aria-hidden={false}>
               <label className="sr-only" htmlFor="nav-prompt">Start prompt</label>
-              <select
+              <CustomSelect
                 id="nav-prompt"
-                className="nav-prompt-select"
-                aria-label="Quick prompt"
+                className="nav-prompt-custom"
+                options={["Tell me what bothers you", "Casual talk"]}
                 value={promptMode}
-                onChange={(e) => setPromptMode(e.target.value)}
-              >
-                <option>Tell me what bothers you</option>
-                <option>Casual talk</option>
-              </select>
+                onChange={(v) => setPromptMode(v)}
+              />
             </div>
 
             <div className="nav-actions" role="toolbar" aria-label="actions">
