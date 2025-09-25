@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setBackgroundSound, setBackgroundSoundPlaying } from '../../store/uiSlice';
 import './BackgroundSoundPicker.css';
 
 type Sample = { id: string; label: string };
@@ -15,8 +13,7 @@ const TOP_BAR_SAMPLES: Sample[] = [
 ];
 
 const BackgroundSoundPicker: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const selected = useAppSelector((s: any) => s.ui.backgroundSound) as string | null;
+  // no redux dispatch needed here; selection is handled locally via toggles
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const padNodesRef = useRef<OscillatorNode[] | null>(null);
@@ -63,7 +60,6 @@ const BackgroundSoundPicker: React.FC = () => {
   const metronomeIntervalRef = useRef<number | null>(null);
   const snapBufferRef = useRef<AudioBuffer | null>(null);
   // upload disabled — default snap from public/samples is used
-  const [loadedSampleLabel, setLoadedSampleLabel] = useState<string | null>(null);
   const loadedDefaultRef = useRef<boolean>(false);
 
   async function ensureSnapBuffer(ctx: AudioContext) {
@@ -86,7 +82,7 @@ const BackgroundSoundPicker: React.FC = () => {
   // load two default samples from public/samples if present
   useEffect(() => {
     if (loadedDefaultRef.current) return;
-    loadedDefaultRef.current = true;
+  loadedDefaultRef.current = true;
   const filename = 'wet-snap-quiet_A#_minor.wav';
   const encoded = `/samples/${encodeURIComponent(filename)}`;
   const raw = `/samples/${filename}`;
@@ -109,23 +105,23 @@ const BackgroundSoundPicker: React.FC = () => {
           if (!res.ok) { console.warn('[BackgroundSoundPicker] bundled snap fetch not ok', url, res.status); }
           const ab = await res.arrayBuffer();
           try { await ctx.resume(); } catch (e) {}
-          try { const buf = await ctx.decodeAudioData(ab.slice(0)); snapBufferRef.current = buf; setLoadedSampleLabel(filename); console.log('[BackgroundSoundPicker] loaded snap from bundled asset'); } catch (err) { console.warn('[BackgroundSoundPicker] decodeAudioData failed for bundled snap', err); }
+          try { const buf = await ctx.decodeAudioData(ab.slice(0)); snapBufferRef.current = buf; console.log('[BackgroundSoundPicker] loaded snap from bundled asset'); } catch (err) { console.warn('[BackgroundSoundPicker] decodeAudioData failed for bundled snap', err); }
         } catch (err) { console.warn('[BackgroundSoundPicker] fetch failed for bundled snap', err); }
       }
     } catch (err) { console.warn('[BackgroundSoundPicker] dynamic import failed for snap', err); }
     for (const u of [encoded, pct, raw]) {
       if (snapBufferRef.current) break;
-      try {
-        console.log('[BackgroundSoundPicker] trying snap url', u);
-        const res = await fetch(u);
-        if (!res.ok) { console.warn('snap fetch not ok', u, res.status); continue; }
-        const ab = await res.arrayBuffer();
-        try { await ctx.resume(); } catch (e) {}
-        try { const buf = await ctx.decodeAudioData(ab.slice(0)); snapBufferRef.current = buf; setLoadedSampleLabel(filename); console.log('[BackgroundSoundPicker] loaded snap from url', u); break; } catch (err) { console.warn('decodeAudioData failed for', u, err); continue; }
+        try {
+          console.log('[BackgroundSoundPicker] trying snap url', u);
+          const res = await fetch(u);
+          if (!res.ok) { console.warn('snap fetch not ok', u, res.status); continue; }
+          const ab = await res.arrayBuffer();
+          try { await ctx.resume(); } catch (e) {}
+          try { const buf = await ctx.decodeAudioData(ab.slice(0)); snapBufferRef.current = buf; console.log('[BackgroundSoundPicker] loaded snap from url', u); break; } catch (err) { console.warn('decodeAudioData failed for', u, err); continue; }
       } catch (err) { console.warn('fetch failed for', u, err); continue; }
     }
   // ensure snap exists at least generated
-  try { await ensureSnapBuffer(ctx); setLoadedSampleLabel((prev) => prev || 'generated snap'); } catch (e) {}
+  try { await ensureSnapBuffer(ctx); } catch (e) {}
   })();
 
   // metronome removed
@@ -251,19 +247,7 @@ const BackgroundSoundPicker: React.FC = () => {
     // metronome removed; snap remains
   }
 
-  function handleUse(id: string) {
-    // mark selected in redux and ensure audio plays
-    dispatch(setBackgroundSound(`generated:${id}`));
-    dispatch(setBackgroundSoundPlaying(true));
-    // start persistent pad for selection if pad chosen
-    if (id === 'healing-pad') startPad();
-    // if snap selected while pad playing, start persistent snap loop aligned to pad
-    if (id === 'snap') {
-      if (padStartTimeRef.current) startSnapLoop(60);
-      else startSnapLoop(60); // start loop even if pad not playing (unified behavior)
-    }
-    // metronome removed
-  }
+  // selection is handled via direct toggle clicks on the nav items
 
   // stop control removed; individual controls manage playback
 
@@ -271,20 +255,21 @@ const BackgroundSoundPicker: React.FC = () => {
     <div className="bg-sound-picker small">
       <nav className="bg-sound-topbar nav-bar" role="navigation" aria-label="Background sounds">
           <div className="nav-inner">
-          {[...TOP_BAR_SAMPLES, ...SAMPLES].map((t) => (
-            <div key={t.id} className={`top-sample nav-item ${topPreviewId === t.id || previewId === t.id ? 'previewing' : ''}`}>
-              <div className="label">
-                {t.label}
-                {t.id === 'snap' && loadedSampleLabel ? (
-                  <span className="sample-label">{loadedSampleLabel}</span>
-                ) : null}
+          {[...TOP_BAR_SAMPLES, ...SAMPLES].map((t) => {
+            const isPlaying = (t.id === 'healing-pad') ? (previewId === t.id) : (topPreviewId === t.id);
+            return (
+              <div
+                key={t.id}
+                role="button"
+                tabIndex={0}
+                className={`top-sample nav-item ${isPlaying ? 'playing' : ''}`}
+                onClick={() => (t.id === 'healing-pad' ? handlePreview(t.id) : handleTopPreview(t.id))}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { (t.id === 'healing-pad' ? handlePreview(t.id) : handleTopPreview(t.id)); } }}
+              >
+                <div className="label">{t.label}</div>
               </div>
-              <div className="controls">
-                <button onClick={() => (t.id === 'healing-pad' ? handlePreview(t.id) : handleTopPreview(t.id))} className="btn-preview">{(topPreviewId === t.id || previewId === t.id) ? 'Stop' : 'Preview'}</button>
-                <button onClick={() => handleUse(t.id)} className="btn-use">{selected === `generated:${t.id}` ? 'Selected' : 'Use'}</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           </div>
         </nav>
 
