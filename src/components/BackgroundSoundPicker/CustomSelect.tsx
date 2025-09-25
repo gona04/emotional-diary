@@ -41,7 +41,6 @@ const CustomSelect: React.FC<Props> = ({ options, value, onChange, id, className
     <div ref={rootRef} id={id} className={`custom-select ${className || ''}`} tabIndex={0} onKeyDown={onKeyDown} aria-haspopup="listbox" aria-expanded={open}>
       <button type="button" className="custom-select-toggle" onClick={toggle} aria-label="Open prompt menu">
         <span className="custom-select-value">{value}</span>
-        <svg width="12" height="8" viewBox="0 0 10 6" aria-hidden focusable="false"><path d="M1 1l4 4 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
       </button>
 
       {open && (

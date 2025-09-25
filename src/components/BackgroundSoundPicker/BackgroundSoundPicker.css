@@ -141,14 +141,14 @@ select::-webkit-calendar-picker-indicator { opacity: 0 }
 /* Custom select (replaces native select for consistent styling) */
 .custom-select { display: inline-block; position: relative; }
 .custom-select:focus { outline: none; }
-.custom-select-toggle { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); color: var(--nav-accent); border: 1px solid rgba(255,255,255,0.04); padding: 0.55rem 1rem; border-radius: 999px; min-width: 240px; cursor: pointer; box-shadow: 0 6px 18px rgba(20,20,30,0.10); font-size: 0.95rem; }
+.custom-select-toggle { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(180deg, rgba(255,240,245,0.85), rgba(255,238,244,0.72)); color: var(--nav-accent-strong); border: 1px solid rgba(255,111,161,0.12); padding: 0.6rem 1.1rem; border-radius: 999px; min-width: 260px; cursor: pointer; box-shadow: 0 8px 24px rgba(20,20,30,0.10); font-size: 0.98rem; font-weight:300; }
 .custom-select-toggle:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(20,20,30,0.12); }
 .custom-select-toggle:focus { box-shadow: 0 16px 44px rgba(255,79,134,0.14); }
-.custom-select-value { flex: 1; text-align: left; }
+.custom-select-value { flex: 1; text-align: left; font-weight:300; }
 
-.custom-select-menu { position: absolute; left: 0; right: 0; margin-top: 8px; background: linear-gradient(180deg, #fff7fb 0%, #fff0f6 100%); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(20,20,30,0.12); z-index: 1500; list-style: none; max-height: 260px; overflow: auto; }
-.custom-select-item { padding: 8px 12px; border-radius: 8px; color: #ff4f86; font-weight: 500; cursor: pointer; }
-.custom-select-item:hover { background: rgba(255,111,161,0.06); }
+.custom-select-menu { position: absolute; left: 0; right: 0; margin-top: 10px; background: linear-gradient(180deg, #fff7fb 0%, #fff0f6 100%); border-radius: 14px; padding: 8px; box-shadow: 0 18px 50px rgba(20,20,30,0.14); z-index: 1500; list-style: none; max-height: 300px; overflow: auto; border: 1px solid rgba(255,111,161,0.06); }
+.custom-select-item { padding: 10px 14px; border-radius: 10px; color: #ff4f86; font-weight: 300; cursor: pointer; transition: background 140ms ease, transform 120ms ease; }
+.custom-select-item:hover { background: rgba(255,111,161,0.06); transform: translateY(-2px); }
 .custom-select-item.selected { background: rgba(255,111,161,0.12); color: var(--nav-accent-selected); box-shadow: inset 0 1px 0 rgba(255,255,255,0.02); }
 .custom-select-item.highlight { background: rgba(255,111,161,0.08); }
 
@@ -156,13 +156,24 @@ select::-webkit-calendar-picker-indicator { opacity: 0 }
 .custom-select.custom-select .custom-select-toggle, .custom-select .custom-select-toggle { min-width: 240px; }
 
 /* new class for when custom select is used in nav to avoid native select styling collisions */
-.nav-prompt-custom .custom-select-toggle { min-width: 240px; }
-.nav-prompt-custom .custom-select-menu { left: 50%; transform: translateX(-50%); width: 360px; max-width: calc(100vw - 48px); }
+.nav-prompt-custom .custom-select-toggle { min-width: 260px; padding-right: 44px; position: relative; }
+.nav-prompt-custom .custom-select-toggle::after { content: ''; position: absolute; right: 14px; width: 18px; height: 18px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'><path d='M7 10l5 5 5-5' stroke='%23ff4f86' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>"); background-repeat: no-repeat; background-size: 18px 18px; pointer-events: none; opacity: 0.95; }
+.nav-prompt-custom .custom-select-menu { left: 50%; transform: translateX(-50%); width: 420px; max-width: calc(100vw - 48px); padding: 10px; }
 
 /* Defensive: hide any native <select> inside the nav center to avoid duplicate dropdowns */
 .nav-center select { display: none !important; }
 /* If old class appears, ensure it's hidden when custom version used */
 .nav-prompt-select { display: none !important; }
+
+/* Prompt info modal styles */
+.prompt-modal-overlay { position: fixed; inset: 0; background: rgba(6,6,8,0.45); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.prompt-modal { background: linear-gradient(180deg, #fff, #fffefc); border-radius: 14px; padding: 20px 22px; max-width: 560px; width: calc(100% - 64px); box-shadow: 0 28px 80px rgba(10,10,20,0.26); color: #222; border: 1px solid rgba(255,111,161,0.06); }
+.prompt-modal h3 { margin: 0 0 10px 0; color: var(--nav-accent-strong); font-size: 1.15rem; }
+.prompt-modal-desc { margin: 0 0 16px 0; color: #333; line-height: 1.5; font-size: 0.98rem; }
+.prompt-modal-actions { display:none; }
+.prompt-modal-close { position: absolute; right: 12px; top: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.06); color: var(--nav-accent-strong); font-size: 20px; line-height: 1; display: inline-flex; align-items:center; justify-content:center; cursor: pointer; }
+.prompt-modal-close:hover { background: rgba(255,255,255,0.09); transform: translateY(-1px); }
+.prompt-modal-close:focus { outline: none; box-shadow: 0 0 0 4px rgba(255,111,161,0.10); }
 
 
 

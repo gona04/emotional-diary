@@ -17,7 +17,18 @@ const BackgroundSoundPicker: React.FC = () => {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [topPreviewId, setTopPreviewId] = useState<string | null>(null);
   const [clickedId, setClickedId] = useState<string | null>(null);
-  const [promptMode, setPromptMode] = useState<string>('Tell me what bothers you');
+  const [promptMode, setPromptMode] = useState<string>('walk with me');
+  const [showPromptInfo, setShowPromptInfo] = useState<boolean>(false);
+  const [promptInfoText, setPromptInfoText] = useState<string>('');
+  const promptCloseRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (showPromptInfo) {
+      // small timeout to ensure the element is rendered before focusing
+      setTimeout(() => {
+        try { promptCloseRef.current?.focus(); } catch (e) {}
+      }, 10);
+    }
+  }, [showPromptInfo]);
   const dispatch = useAppDispatch();
   const showMicrophone = useAppSelector(s => s.ui.showMicrophone);
   const showInput = useAppSelector(s => s.ui.showInput);
@@ -314,9 +325,32 @@ const BackgroundSoundPicker: React.FC = () => {
               <CustomSelect
                 id="nav-prompt"
                 className="nav-prompt-custom"
-                options={["Tell me what bothers you", "Casual talk"]}
+                options={["Casual Talk", "Quick Tools", "Let's Talk", "Walk With Me"]}
                 value={promptMode}
-                onChange={(v) => setPromptMode(v)}
+                onChange={(v) => {
+                  // update prompt mode and show an explanatory popup (user-friendly, no therapy names)
+                  setPromptMode(v);
+                  // set the description based on the chosen label
+                  let txt = '';
+                  switch (v) {
+                    case 'Casual Talk':
+                      txt = 'A low-pressure, friendly conversation — great when you just want to talk about your day, how you’re feeling, or get something off your chest.';
+                      break;
+                    case 'Quick Solutions':
+                      txt = 'Short, practical strategies you can try right now if things feel overwhelming. Use this when you need immediate, simple steps to steady yourself.';
+                      break;
+                    case "Let's Talk":
+                      txt = 'A deeper, guided conversation to help you explore patterns that keep showing up — especially if you find yourself repeating the same chaotic moments. Good when you want structured support to make sense of things and try a different approach.';
+                      break;
+                    case 'Walk With Me':
+                      txt = `A calming, guided session with soothing cues and gentle steps to help shift perspective. Best when you’re feeling somewhat steady — if you are in the middle of a chaos try 'Quick Solutions'.`;
+                      break;
+                    default:
+                      txt = '';
+                  }
+                  setPromptInfoText(txt);
+                  setShowPromptInfo(true);
+                }}
               />
             </div>
 
@@ -358,6 +392,33 @@ const BackgroundSoundPicker: React.FC = () => {
             </div>
           </div>
         </nav>
+
+          {/* Prompt info modal */}
+          {showPromptInfo && (
+            <div
+              className="prompt-modal-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="prompt-modal-title"
+              onClick={() => setShowPromptInfo(false)}
+              onKeyDown={(e) => { if (e.key === 'Escape') setShowPromptInfo(false); }}
+              tabIndex={-1}
+            >
+              <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
+                <h3 id="prompt-modal-title">{promptMode}</h3>
+                <p className="prompt-modal-desc">{promptInfoText}</p>
+                <button
+                  ref={promptCloseRef}
+                  type="button"
+                  className="prompt-modal-close"
+                  aria-label={`Close ${promptMode} info`}
+                  onClick={() => setShowPromptInfo(false)}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
       {/* footer removed - stop control moved to individual controls */}
     </div>
