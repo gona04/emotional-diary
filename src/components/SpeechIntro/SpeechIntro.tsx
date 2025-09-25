@@ -32,6 +32,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
             setCurrentSentence={setCurrentSentence}
             setShowMicrophone={setShowMicrophone}
           />
+          {/* Background sound options moved to global top-right picker */}
         </div>
       )}
 

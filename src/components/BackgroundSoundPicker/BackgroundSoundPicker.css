@@ -1,0 +1,7 @@
+.bg-sound-picker.small { padding: 0.5rem; margin-top: 1rem; }
+.bg-sound-list { display: flex; gap: 0.5rem; flex-direction: column; align-items: stretch; }
+.bg-sound-item { background: rgba(255,255,255,0.06); padding: 0.5rem; border-radius: 8px; display:flex; align-items:center; justify-content:space-between; gap:0.5rem; min-width: 200px; }
+.bg-sound-item.selected { outline: 2px solid rgba(239,87,113,0.9); }
+.bg-sound-item .label { font-weight:600; color:#333; }
+.bg-sound-item .controls button { margin-left:0.25rem }
+.bg-sound-footer { margin-top:0.75rem }
