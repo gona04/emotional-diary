@@ -308,7 +308,7 @@ const BackgroundSoundPicker: React.FC = () => {
           <div className="nav-inner">
             <div className="nav-left">
               <div role="menu" aria-label="background-sounds" className="nav-sounds">
-                {promptMode !== 'Casual talk' && (
+                {promptMode === 'Walk With Me' && (
                   <>
                     <div
                       className={`nav-item ${previewId === 'healing-pad' ? 'playing' : ''} ${clickedId === 'healing-pad' ? 'clicked' : ''}`}
@@ -390,7 +390,7 @@ const BackgroundSoundPicker: React.FC = () => {
                 Chat
               </div>
 
-              {promptMode !== 'Casual talk' && (
+              {promptMode === 'Walk With Me' && (
                 <div
                   className={`nav-action ${showAnimation ? 'active' : ''} ${clickedId === 'animation' ? 'clicked' : ''}`}
                   onClick={() => onActivate('animation', toggleAnimation)}
