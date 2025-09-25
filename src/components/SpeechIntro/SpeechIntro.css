@@ -57,6 +57,11 @@ button.microphone-icon {
   transform: scale(1); 
 }
 
+/* show pointer when hovering the mic so users know it's interactive */
+.mic-cover .microphone-icon:hover {
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .mic-cover {
       padding: 8rem; /* Reduce padding for smaller screens */
