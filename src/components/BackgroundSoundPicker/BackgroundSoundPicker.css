@@ -6,32 +6,35 @@
 .bg-sound-item .controls button { margin-left:0.25rem }
 .bg-sound-footer { margin-top:0.75rem }
 
-.bg-sound-topbar { position: fixed; top: 0; left: 0; right: 0; display:block; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.04); z-index: 1200; }
+.bg-sound-topbar { position: fixed; top: 0; left: 0; right: 0; display:block; z-index: 1200; }
 .bg-sound-topbar {
 	position: fixed; top: 0; left: 0; right: 0; display:block; z-index: 1200;
-	/* refined color palette (CSS variables) */
-	--nav-primary: #ffb3c6; /* lighter rose/pink */
-	--nav-accent: #ff6b6b; /* supporting pink accent */
-	--nav-item-bg: rgba(255,255,255,0.06);
-	--nav-item-bg-hover: rgba(255,255,255,0.10);
+	/* baby-pink very transparent navbar + variables */
+	--nav-primary: rgba(255, 182, 193, 0.06); /* baby pink, very transparent */
+	--nav-accent: rgb(239, 87, 113); /* button font color requested */
+	--nav-item-bg: rgba(239, 87, 113, 0.18); /* darker pink background for buttons */
+	--nav-item-bg-hover: rgba(239, 87, 113, 0.30);
 	--nav-text: #ffffff;
-	background: var(--nav-primary);
-	border-bottom: 1px solid rgba(0,0,0,0.12);
+	/* translucent background with subtle blur */
+	background: linear-gradient(180deg, rgba(255,182,193,0.06), rgba(255,182,193,0.04));
+	backdrop-filter: blur(6px) saturate(110%);
+	-webkit-backdrop-filter: blur(6px) saturate(110%);
+	border-bottom: 1px solid rgba(0,0,0,0.04);
 }
-.bg-sound-topbar .nav-inner { display:flex; gap:0.75rem; align-items:center; padding:0.5rem 1rem; overflow-x: auto; white-space: nowrap; }
+.bg-sound-topbar .nav-inner { display:flex; gap:0.6rem; align-items:center; padding:1rem 1.25rem; overflow-x: auto; white-space: nowrap; height:72px; }
 /* align left items and keep mic at right */
 .bg-sound-topbar .nav-inner { justify-content: flex-start; }
-.nav-item { background: var(--nav-item-bg); padding:0.45rem 0.85rem; border-radius:999px; display:inline-flex; gap:0.6rem; align-items:center; margin-right:0.6rem; box-shadow: 0 6px 18px rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.04); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
-.nav-item .label { font-weight:700; font-size:0.95rem; color: var(--nav-text) }
+.nav-item { background: var(--nav-item-bg); padding:0.5rem 0.9rem; border-radius:6px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid rgba(255,255,255,0.03); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
+.nav-item .label { font-weight:700; font-size:0.96rem; color: var(--nav-accent) }
 .nav-item .controls button { margin-left:0.4rem; background: transparent; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight:600; color: var(--nav-text) }
 .nav-item .controls .btn-preview { background: var(--nav-item-bg); color: var(--nav-text) }
 .nav-item .controls .btn-use { background: var(--nav-accent); color: var(--nav-text) }
-.nav-item:hover { transform: translateY(-3px); background: var(--nav-item-bg-hover); box-shadow: 0 10px 30px rgba(0,0,0,0.22); }
+.nav-item:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
 .nav-item .controls .btn-preview:hover { transform: translateY(-1px); }
 .nav-item .controls .btn-use:hover { opacity: 0.95 }
 .nav-item.previewing { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(0,0,0,0.26); }
-.nav-item.playing { background: rgba(0,0,0,0.12); color: var(--nav-text); box-shadow: 0 12px 30px rgba(0,0,0,0.3); transform: translateY(-3px); }
-.mic-toggle.active { box-shadow: 0 10px 34px rgba(255,107,107,0.16); transform: translateY(-2px); border: 1px solid rgba(255,107,107,0.18); background: rgba(255,107,107,0.06); }
+.nav-item.playing { background: rgba(239,87,113,0.34); color: var(--nav-text); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.mic-toggle.active { box-shadow: 0 10px 34px rgba(239,87,113,0.16); transform: translateY(-2px); border: 1px solid rgba(239,87,113,0.18); background: rgba(239,87,113,0.06); }
 .sample-label { font-size: 11px; opacity: 0.85; margin-left: 8px; color: rgba(255,255,255,0.75) }
 
 /* responsive: center items on large screens */
