@@ -25,6 +25,11 @@ const uiSlice = createSlice({
       state.currentSentence = action.payload;
     },
     setShowInput(state: UIState, action: PayloadAction<boolean>) {
+      // when enabling input, disable other right-side UI panels
+      if (action.payload) {
+        state.showMicrophone = false;
+        state.showAnimation = false;
+      }
       state.showInput = action.payload;
     },
     setShowMicrophone(state: UIState, action: PayloadAction<boolean>) {
@@ -32,6 +37,11 @@ const uiSlice = createSlice({
       if (action.payload === true && !state.microphoneUnlocked) {
         // ignore attempts to enable if not unlocked
         return;
+      }
+      // when enabling microphone, disable other right-side UI panels
+      if (action.payload) {
+        state.showInput = false;
+        state.showAnimation = false;
       }
       state.showMicrophone = action.payload;
     }
@@ -41,6 +51,11 @@ const uiSlice = createSlice({
     }
     ,
     setShowAnimation(state: UIState, action: PayloadAction<boolean>) {
+      // when enabling animation, disable other right-side UI panels
+      if (action.payload) {
+        state.showInput = false;
+        state.showMicrophone = false;
+      }
       state.showAnimation = action.payload;
     }
   }
