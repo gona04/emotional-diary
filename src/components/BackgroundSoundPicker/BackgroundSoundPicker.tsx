@@ -338,7 +338,7 @@ const BackgroundSoundPicker: React.FC = () => {
               <CustomSelect
                 id="nav-prompt"
                 className="nav-prompt-custom"
-                options={["Casual Talk", "Quick Tools", "Let's Talk", "Walk With Me"]}
+                options={["Casual Talk", "Quick Solutions", "Let's Talk", "Walk With Me"]}
                 value={promptMode}
                 onChange={(v) => {
                   // update prompt mode and show an explanatory popup (user-friendly, no therapy names)
