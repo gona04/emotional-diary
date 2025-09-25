@@ -1,16 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './BackgroundSoundPicker.css';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setShowInput, setShowMicrophone, setShowAnimation } from '../../store/uiSlice';
 
-type Sample = { id: string; label: string };
-
-// Main samples: pad (ambient). Top-bar samples are quick-access rhythmic/clicks and counting.
-const SAMPLES: Sample[] = [
-  { id: 'healing-pad', label: 'Healing Pad' },
-];
-
-const TOP_BAR_SAMPLES: Sample[] = [
-  { id: 'snap', label: 'Snap' },
-];
+// (type removed - explicit nav items rendered inline)
 
 const BackgroundSoundPicker: React.FC = () => {
   // no redux dispatch needed here; selection is handled locally via toggles
@@ -22,6 +15,29 @@ const BackgroundSoundPicker: React.FC = () => {
   const padBpmRef = useRef<number | null>(60);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [topPreviewId, setTopPreviewId] = useState<string | null>(null);
+  const [clickedId, setClickedId] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const showMicrophone = useAppSelector(s => s.ui.showMicrophone);
+  const showInput = useAppSelector(s => s.ui.showInput);
+  const showAnimation = useAppSelector(s => s.ui.showAnimation);
+
+  const onActivate = useCallback((id: string, fn: () => void) => {
+    setClickedId(id);
+    window.setTimeout(() => setClickedId(null), 220);
+    fn();
+  }, []);
+
+  const toggleMicrophone = useCallback(() => {
+    dispatch(setShowMicrophone(!showMicrophone));
+  }, [dispatch, showMicrophone]);
+
+  const toggleChat = useCallback(() => {
+    dispatch(setShowInput(!showInput));
+  }, [dispatch, showInput]);
+
+  const toggleAnimation = useCallback(() => {
+    dispatch(setShowAnimation(!showAnimation));
+  }, [dispatch, showAnimation]);
 
   useEffect(() => {
     return () => {
@@ -255,21 +271,63 @@ const BackgroundSoundPicker: React.FC = () => {
     <div className="bg-sound-picker small">
       <nav className="bg-sound-topbar nav-bar" role="navigation" aria-label="Background sounds">
           <div className="nav-inner">
-          {[...TOP_BAR_SAMPLES, ...SAMPLES].map((t) => {
-            const isPlaying = (t.id === 'healing-pad') ? (previewId === t.id) : (topPreviewId === t.id);
-            return (
-              <div
-                key={t.id}
-                role="button"
-                tabIndex={0}
-                className={`top-sample nav-item ${isPlaying ? 'playing' : ''}`}
-                onClick={() => (t.id === 'healing-pad' ? handlePreview(t.id) : handleTopPreview(t.id))}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { (t.id === 'healing-pad' ? handlePreview(t.id) : handleTopPreview(t.id)); } }}
-              >
-                <div className="label">{t.label}</div>
+            <div className="nav-left">
+              <div role="menu" aria-label="background-sounds" className="nav-sounds">
+                <div
+                  className={`nav-item ${previewId === 'healing-pad' ? 'playing' : ''} ${clickedId === 'healing-pad' ? 'clicked' : ''}`}
+                  onClick={() => onActivate('healing-pad', () => handlePreview('healing-pad'))}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('healing-pad', () => handlePreview('healing-pad')); } }}
+                  tabIndex={0}
+                  role="menuitem"
+                >
+                  Healing Pad
+                </div>
+                <div
+                  className={`nav-item ${topPreviewId === 'snap' ? 'playing' : ''} ${clickedId === 'snap' ? 'clicked' : ''}`}
+                  onClick={() => onActivate('snap', () => handleTopPreview('snap'))}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('snap', () => handleTopPreview('snap')); } }}
+                  tabIndex={0}
+                  role="menuitem"
+                >
+                  Snap
+                </div>
               </div>
-            );
-          })}
+            </div>
+
+            <div className="nav-actions" role="toolbar" aria-label="actions">
+              <div
+                className={`nav-action ${showMicrophone ? 'active' : ''} ${clickedId === 'speak' ? 'clicked' : ''}`}
+                onClick={() => onActivate('speak', toggleMicrophone)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('speak', toggleMicrophone); } }}
+                tabIndex={0}
+                role="button"
+                aria-pressed={showMicrophone}
+              >
+                Speak
+              </div>
+
+              <div
+                className={`nav-action ${showInput ? 'active' : ''} ${clickedId === 'chat' ? 'clicked' : ''}`}
+                onClick={() => onActivate('chat', toggleChat)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('chat', toggleChat); } }}
+                tabIndex={0}
+                role="button"
+                aria-pressed={showInput}
+              >
+                Chat
+              </div>
+
+              <div
+                className={`nav-action ${showAnimation ? 'active' : ''} ${clickedId === 'animation' ? 'clicked' : ''}`}
+                onClick={() => onActivate('animation', toggleAnimation)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('animation', toggleAnimation); } }}
+                tabIndex={0}
+                role="button"
+                aria-pressed={showAnimation}
+              >
+                Animation
+              </div>
+            </div>
           </div>
         </nav>
 

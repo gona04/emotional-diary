@@ -4,16 +4,14 @@ type UIState = {
   currentSentence: number;
   showInput: boolean;
   showMicrophone: boolean;
-  backgroundSound: string | null;
-  backgroundSoundPlaying: boolean;
+  showAnimation: boolean;
 };
 
 const initialState: UIState = {
   currentSentence: 0,
   showInput: false,
   showMicrophone: false,
-  backgroundSound: null,
-  backgroundSoundPlaying: false,
+  showAnimation: false,
 };
 
 const uiSlice = createSlice({
@@ -30,14 +28,11 @@ const uiSlice = createSlice({
       state.showMicrophone = action.payload;
     }
     ,
-    setBackgroundSound(state: UIState, action: PayloadAction<string | null>) {
-      state.backgroundSound = action.payload;
-    },
-    setBackgroundSoundPlaying(state: UIState, action: PayloadAction<boolean>) {
-      state.backgroundSoundPlaying = action.payload;
+    setShowAnimation(state: UIState, action: PayloadAction<boolean>) {
+      state.showAnimation = action.payload;
     }
   }
 });
 
-export const { setCurrentSentence, setShowInput, setShowMicrophone, setBackgroundSound, setBackgroundSoundPlaying } = uiSlice.actions;
+export const { setCurrentSentence, setShowInput, setShowMicrophone, setShowAnimation } = uiSlice.actions;
 export default uiSlice.reducer;

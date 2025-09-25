@@ -11,9 +11,10 @@
 	position: fixed; top: 0; left: 0; right: 0; display:block; z-index: 1200;
 	/* baby-pink very transparent navbar + variables */
 	--nav-primary: rgba(255, 182, 193, 0.06); /* baby pink, very transparent */
-	--nav-accent: rgb(239, 87, 113); /* button font color requested */
-	--nav-item-bg: rgba(239, 87, 113, 0.18); /* darker pink background for buttons */
-	--nav-item-bg-hover: rgba(239, 87, 113, 0.30);
+	--nav-accent: rgb(217, 48, 95); /* darker pink accent */
+	--nav-accent-selected: rgb(80, 12, 30); /* darker pink near-black but keeps warm tone */
+	--nav-item-bg: rgba(217, 48, 95, 0.20); /* slightly darker button background */
+	--nav-item-bg-hover: rgba(217, 48, 95, 0.36);
 	--nav-text: #ffffff;
 	/* translucent background with subtle blur */
 	background: linear-gradient(180deg, rgba(255,182,193,0.06), rgba(255,182,193,0.04));
@@ -24,8 +25,28 @@
 .bg-sound-topbar .nav-inner { display:flex; gap:0.6rem; align-items:center; padding:1rem 1.25rem; overflow-x: auto; white-space: nowrap; height:72px; }
 /* align left items and keep mic at right */
 .bg-sound-topbar .nav-inner { justify-content: flex-start; }
+.nav-left { display:flex; align-items:center; margin-right:auto; }
+.nav-actions { display:flex; gap:0.5rem; margin-left: auto; align-items:center; }
+.nav-action { background: var(--nav-item-bg); padding:0.5rem 0.9rem; border-radius:6px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem; cursor:pointer; font-weight:300; color: var(--nav-accent); border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
+.nav-action:hover { transform: translateY(-2px); background: var(--nav-item-bg-hover); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+.nav-action.active { background: rgba(239,87,113,0.34); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.nav-action.clicked { animation: navClickPulse 220ms ease forwards; }
+
+@keyframes navClickPulse {
+	0% { transform: scale(1); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+	50% { transform: scale(0.98); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+	100% { transform: scale(1); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+}
 .nav-item { background: var(--nav-item-bg); padding:0.5rem 0.9rem; border-radius:6px; display:inline-flex; gap:0.5rem; align-items:center; margin-right:0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid rgba(255,255,255,0.03); transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; }
-.nav-item .label { font-weight:700; font-size:0.96rem; color: var(--nav-accent) }
+.nav-item .label { font-weight:300; font-size:0.96rem; color: var(--nav-accent) }
+/* Force left-side labels (Healing Pad / Snap) to always show the accent color */
+.nav-left .nav-item .label { color: var(--nav-accent) !important; }
+.nav-left .nav-item { color: var(--nav-accent) !important; }
+.nav-left .nav-item.playing { color: var(--nav-accent-selected) !important; }
+
+/* Keep button visual language consistent between nav-item and nav-action */
+.nav-action, .nav-item { font-family: inherit; border-radius: 6px; }
+.nav-action .label { color: inherit; font-weight: 300; font-size: 0.96rem; }
 .nav-item .controls button { margin-left:0.4rem; background: transparent; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight:600; color: var(--nav-text) }
 .nav-item .controls .btn-preview { background: var(--nav-item-bg); color: var(--nav-text) }
 .nav-item .controls .btn-use { background: var(--nav-accent); color: var(--nav-text) }
@@ -33,7 +54,10 @@
 .nav-item .controls .btn-preview:hover { transform: translateY(-1px); }
 .nav-item .controls .btn-use:hover { opacity: 0.95 }
 .nav-item.previewing { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(0,0,0,0.26); }
-.nav-item.playing { background: rgba(239,87,113,0.34); color: var(--nav-text); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.nav-item.playing { background: rgba(239,87,113,0.34); color: var(--nav-accent-selected); box-shadow: 0 10px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+
+/* also apply selected color briefly during click animation state */
+.nav-action.clicked, .nav-item.clicked { color: var(--nav-accent-selected) !important; }
 .mic-toggle.active { box-shadow: 0 10px 34px rgba(239,87,113,0.16); transform: translateY(-2px); border: 1px solid rgba(239,87,113,0.18); background: rgba(239,87,113,0.06); }
 .sample-label { font-size: 11px; opacity: 0.85; margin-left: 8px; color: rgba(255,255,255,0.75) }
 
