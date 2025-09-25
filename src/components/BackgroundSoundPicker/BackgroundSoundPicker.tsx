@@ -3,6 +3,8 @@ import './BackgroundSoundPicker.css';
 import CustomSelect from './CustomSelect';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setShowInput, setShowMicrophone, setShowAnimation } from '../../store/uiSlice';
+import { setPromptMode, setShowPromptInfo, setPromptInfoText } from '../../store/promptSlice';
+import { setPreviewId, setTopPreviewId, setPadPlaying, setPadStartTime, setPadBpm } from '../../store/audioSlice';
 
 // (type removed - explicit nav items rendered inline)
 
@@ -14,12 +16,10 @@ const BackgroundSoundPicker: React.FC = () => {
   const padGainRef = useRef<GainNode | null>(null);
   const padStartTimeRef = useRef<number | null>(null);
   const padBpmRef = useRef<number | null>(60);
-  const [previewId, setPreviewId] = useState<string | null>(null);
-  const [topPreviewId, setTopPreviewId] = useState<string | null>(null);
   const [clickedId, setClickedId] = useState<string | null>(null);
-  const [promptMode, setPromptMode] = useState<string>('walk with me');
-  const [showPromptInfo, setShowPromptInfo] = useState<boolean>(false);
-  const [promptInfoText, setPromptInfoText] = useState<string>('');
+  const promptMode = useAppSelector((s) => s.prompt.promptMode);
+  const showPromptInfo = useAppSelector((s) => s.prompt.showPromptInfo);
+  const promptInfoText = useAppSelector((s) => s.prompt.promptInfoText);
   const promptCloseRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
     if (showPromptInfo) {
@@ -33,6 +33,10 @@ const BackgroundSoundPicker: React.FC = () => {
   const showMicrophone = useAppSelector(s => s.ui.showMicrophone);
   const showInput = useAppSelector(s => s.ui.showInput);
   const showAnimation = useAppSelector(s => s.ui.showAnimation);
+  const previewId = useAppSelector((s) => s.audio.previewId);
+  const topPreviewId = useAppSelector((s) => s.audio.topPreviewId);
+  // padPlaying flag currently unused in render; keep in store for future use
+  useAppSelector((s) => s.audio.padPlaying);
 
   const onActivate = useCallback((id: string, fn: () => void) => {
     setClickedId(id);
@@ -52,11 +56,7 @@ const BackgroundSoundPicker: React.FC = () => {
     dispatch(setShowAnimation(!showAnimation));
   }, [dispatch, showAnimation]);
 
-  useEffect(() => {
-    return () => {
-      stopAll();
-    };
-  }, []);
+  
 
   function ensureCtx() {
     if (!audioCtxRef.current) {
@@ -66,7 +66,7 @@ const BackgroundSoundPicker: React.FC = () => {
     return audioCtxRef.current!;
   }
 
-  function stopAll() {
+  const stopAll = useCallback(() => {
     try {
       padNodesRef.current?.forEach((n) => { try { n.stop(); n.disconnect(); } catch (e) {} });
     } catch (e) {}
@@ -81,9 +81,12 @@ const BackgroundSoundPicker: React.FC = () => {
     }
     padStartTimeRef.current = null;
     padBpmRef.current = null;
-    setPreviewId(null);
-    setTopPreviewId(null);
-  }
+    dispatch(setPreviewId(null));
+    dispatch(setTopPreviewId(null));
+    dispatch(setPadPlaying(false));
+    dispatch(setPadStartTime(null));
+    dispatch(setPadBpm(null));
+  }, [dispatch]);
 
   // --- Top-bar generators: snaps/metronome and counting ---
   const metronomeIntervalRef = useRef<number | null>(null);
@@ -188,7 +191,7 @@ const BackgroundSoundPicker: React.FC = () => {
     // one-shot snap at next immediate moment
     const t = ctx.currentTime + 0.02;
     try { playSnap(ctx, t); } catch (e) { console.warn('[BackgroundSoundPicker] playSnap failed', e); }
-    setTopPreviewId('snap');
+    dispatch(setTopPreviewId('snap'));
     // auto clear preview state shortly after
     setTimeout(() => stopTopBar(), 300);
   }
@@ -226,16 +229,23 @@ const BackgroundSoundPicker: React.FC = () => {
       const t = ctx.currentTime + 0.02;
       playSnap(ctx, t);
     }, interval * 1000);
-    setTopPreviewId('snap');
+    dispatch(setTopPreviewId('snap'));
   }
 
-  function stopTopBar() {
+  const stopTopBar = useCallback(() => {
     if (metronomeIntervalRef.current) {
       clearInterval(metronomeIntervalRef.current);
       metronomeIntervalRef.current = null;
     }
-    setTopPreviewId(null);
-  }
+    dispatch(setTopPreviewId(null));
+  }, [dispatch]);
+
+  useEffect(() => {
+    return () => {
+      stopAll();
+    };
+  }, [stopAll]);
+
 
   // stop audio and reset previews when switching to Casual talk
   useEffect(() => {
@@ -244,7 +254,7 @@ const BackgroundSoundPicker: React.FC = () => {
       stopAll();
       stopTopBar();
     }
-  }, [promptMode]);
+  }, [promptMode, stopAll, stopTopBar]);
 
   // counting removed
 
@@ -265,7 +275,10 @@ const BackgroundSoundPicker: React.FC = () => {
     padStartTimeRef.current = ctx.currentTime;
     // default bpm for pad; could be exposed in UI later
     padBpmRef.current = 60;
-    setPreviewId('healing-pad');
+    dispatch(setPreviewId('healing-pad'));
+    dispatch(setPadPlaying(true));
+    dispatch(setPadStartTime(ctx.currentTime));
+    dispatch(setPadBpm(60));
   }
 
   // healing-bell removed; persistent healing loop replaced by healing-pad only
@@ -320,7 +333,7 @@ const BackgroundSoundPicker: React.FC = () => {
               </div>
             </div>
 
-            <div className="nav-center" aria-hidden={false}>
+              <div className="nav-center" aria-hidden={false}>
               <label className="sr-only" htmlFor="nav-prompt">Start prompt</label>
               <CustomSelect
                 id="nav-prompt"
@@ -329,27 +342,27 @@ const BackgroundSoundPicker: React.FC = () => {
                 value={promptMode}
                 onChange={(v) => {
                   // update prompt mode and show an explanatory popup (user-friendly, no therapy names)
-                  setPromptMode(v);
+                  dispatch(setPromptMode(v));
                   // set the description based on the chosen label
                   let txt = '';
                   switch (v) {
                     case 'Casual Talk':
-                      txt = 'A low-pressure, friendly conversation — great when you just want to talk about your day, how you’re feeling, or get something off your chest.';
+                      txt = 'A low-pressure, friendly conversation  great when you just want to talk about your day, how youre feeling, or get something off your chest.';
                       break;
                     case 'Quick Solutions':
                       txt = 'Short, practical strategies you can try right now if things feel overwhelming. Use this when you need immediate, simple steps to steady yourself.';
                       break;
                     case "Let's Talk":
-                      txt = 'A deeper, guided conversation to help you explore patterns that keep showing up — especially if you find yourself repeating the same chaotic moments. Good when you want structured support to make sense of things and try a different approach.';
+                      txt = 'A deeper, guided conversation to help you explore patterns that keep showing up  especially if you find yourself repeating the same chaotic moments. Good when you want structured support to make sense of things and try a different approach.';
                       break;
                     case 'Walk With Me':
-                      txt = `A calming, guided session with soothing cues and gentle steps to help shift perspective. Best when you’re feeling somewhat steady — if you are in the middle of a chaos try 'Quick Solutions'.`;
+                      txt = `A calming, guided session with soothing cues and gentle steps to help shift perspective. Best when youre feeling somewhat steady  if you are in the middle of a chaos try 'Quick Solutions'.`;
                       break;
                     default:
                       txt = '';
                   }
-                  setPromptInfoText(txt);
-                  setShowPromptInfo(true);
+                  dispatch(setPromptInfoText(txt));
+                  dispatch(setShowPromptInfo(true));
                 }}
               />
             </div>
@@ -400,8 +413,8 @@ const BackgroundSoundPicker: React.FC = () => {
               role="dialog"
               aria-modal="true"
               aria-labelledby="prompt-modal-title"
-              onClick={() => setShowPromptInfo(false)}
-              onKeyDown={(e) => { if (e.key === 'Escape') setShowPromptInfo(false); }}
+              onClick={() => dispatch(setShowPromptInfo(false))}
+                onKeyDown={(e) => { if (e.key === 'Escape') dispatch(setShowPromptInfo(false)); }}
               tabIndex={-1}
             >
               <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
@@ -412,7 +425,7 @@ const BackgroundSoundPicker: React.FC = () => {
                   type="button"
                   className="prompt-modal-close"
                   aria-label={`Close ${promptMode} info`}
-                  onClick={() => setShowPromptInfo(false)}
+                  onClick={() => dispatch(setShowPromptInfo(false))}
                 >
                   ×
                 </button>

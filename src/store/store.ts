@@ -1,6 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import uiReducer from './uiSlice';
 import chatReducer from './chatSlice';
+import promptReducer from './promptSlice';
+import audioReducer from './audioSlice';
 
 // Simple logger middleware
 const logger = (storeAPI: any) => (next: any) => (action: any) => {
@@ -16,6 +18,8 @@ export const store = configureStore({
   reducer: {
     ui: uiReducer,
     chat: chatReducer,
+    prompt: promptReducer,
+    audio: audioReducer,
   },
   middleware: (getDefaultMiddleware: any) => getDefaultMiddleware().concat(logger),
   devTools: true,
