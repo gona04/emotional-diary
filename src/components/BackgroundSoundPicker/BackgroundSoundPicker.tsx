@@ -16,6 +16,7 @@ const BackgroundSoundPicker: React.FC = () => {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [topPreviewId, setTopPreviewId] = useState<string | null>(null);
   const [clickedId, setClickedId] = useState<string | null>(null);
+  const [promptMode, setPromptMode] = useState<string>('Tell me what bothers you');
   const dispatch = useAppDispatch();
   const showMicrophone = useAppSelector(s => s.ui.showMicrophone);
   const showInput = useAppSelector(s => s.ui.showInput);
@@ -224,6 +225,15 @@ const BackgroundSoundPicker: React.FC = () => {
     setTopPreviewId(null);
   }
 
+  // stop audio and reset previews when switching to Casual talk
+  useEffect(() => {
+    if (promptMode === 'Casual talk') {
+      // stop any playing pad/snap
+      stopAll();
+      stopTopBar();
+    }
+  }, [promptMode]);
+
   // counting removed
 
   function startPad() {
@@ -273,31 +283,42 @@ const BackgroundSoundPicker: React.FC = () => {
           <div className="nav-inner">
             <div className="nav-left">
               <div role="menu" aria-label="background-sounds" className="nav-sounds">
-                <div
-                  className={`nav-item ${previewId === 'healing-pad' ? 'playing' : ''} ${clickedId === 'healing-pad' ? 'clicked' : ''}`}
-                  onClick={() => onActivate('healing-pad', () => handlePreview('healing-pad'))}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('healing-pad', () => handlePreview('healing-pad')); } }}
-                  tabIndex={0}
-                  role="menuitem"
-                >
-                  Healing Pad
-                </div>
-                <div
-                  className={`nav-item ${topPreviewId === 'snap' ? 'playing' : ''} ${clickedId === 'snap' ? 'clicked' : ''}`}
-                  onClick={() => onActivate('snap', () => handleTopPreview('snap'))}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('snap', () => handleTopPreview('snap')); } }}
-                  tabIndex={0}
-                  role="menuitem"
-                >
-                  Snap
-                </div>
+                {promptMode !== 'Casual talk' && (
+                  <>
+                    <div
+                      className={`nav-item ${previewId === 'healing-pad' ? 'playing' : ''} ${clickedId === 'healing-pad' ? 'clicked' : ''}`}
+                      onClick={() => onActivate('healing-pad', () => handlePreview('healing-pad'))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('healing-pad', () => handlePreview('healing-pad')); } }}
+                      tabIndex={0}
+                      role="menuitem"
+                    >
+                      Healing Pad
+                    </div>
+                    <div
+                      className={`nav-item ${topPreviewId === 'snap' ? 'playing' : ''} ${clickedId === 'snap' ? 'clicked' : ''}`}
+                      onClick={() => onActivate('snap', () => handleTopPreview('snap'))}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('snap', () => handleTopPreview('snap')); } }}
+                      tabIndex={0}
+                      role="menuitem"
+                    >
+                      Snap
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="nav-center" aria-hidden={false}>
               <label className="sr-only" htmlFor="nav-prompt">Start prompt</label>
-              <select id="nav-prompt" className="nav-prompt-select" aria-label="Quick prompt">
+              <select
+                id="nav-prompt"
+                className="nav-prompt-select"
+                aria-label="Quick prompt"
+                value={promptMode}
+                onChange={(e) => setPromptMode(e.target.value)}
+              >
                 <option>Tell me what bothers you</option>
+                <option>Casual talk</option>
               </select>
             </div>
 
@@ -324,16 +345,18 @@ const BackgroundSoundPicker: React.FC = () => {
                 Chat
               </div>
 
-              <div
-                className={`nav-action ${showAnimation ? 'active' : ''} ${clickedId === 'animation' ? 'clicked' : ''}`}
-                onClick={() => onActivate('animation', toggleAnimation)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('animation', toggleAnimation); } }}
-                tabIndex={0}
-                role="button"
-                aria-pressed={showAnimation}
-              >
-                Animation
-              </div>
+              {promptMode !== 'Casual talk' && (
+                <div
+                  className={`nav-action ${showAnimation ? 'active' : ''} ${clickedId === 'animation' ? 'clicked' : ''}`}
+                  onClick={() => onActivate('animation', toggleAnimation)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onActivate('animation', toggleAnimation); } }}
+                  tabIndex={0}
+                  role="button"
+                  aria-pressed={showAnimation}
+                >
+                  Animation
+                </div>
+              )}
             </div>
           </div>
         </nav>
