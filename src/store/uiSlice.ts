@@ -4,13 +4,16 @@ type UIState = {
   currentSentence: number;
   showInput: boolean;
   showMicrophone: boolean;
+  // whether programmatic enabling of the microphone is allowed
+  microphoneUnlocked: boolean;
   showAnimation: boolean;
 };
 
 const initialState: UIState = {
   currentSentence: 0,
   showInput: false,
-  showMicrophone: true,
+  showMicrophone: false,
+  microphoneUnlocked: false,
   showAnimation: false,
 };
 
@@ -25,7 +28,16 @@ const uiSlice = createSlice({
       state.showInput = action.payload;
     },
     setShowMicrophone(state: UIState, action: PayloadAction<boolean>) {
+      // prevent programmatic enabling of the microphone unless explicitly unlocked
+      if (action.payload === true && !state.microphoneUnlocked) {
+        // ignore attempts to enable if not unlocked
+        return;
+      }
       state.showMicrophone = action.payload;
+    }
+    ,
+    setMicrophoneUnlocked(state: UIState, action: PayloadAction<boolean>) {
+      state.microphoneUnlocked = action.payload;
     }
     ,
     setShowAnimation(state: UIState, action: PayloadAction<boolean>) {
@@ -34,5 +46,5 @@ const uiSlice = createSlice({
   }
 });
 
-export const { setCurrentSentence, setShowInput, setShowMicrophone, setShowAnimation } = uiSlice.actions;
+export const { setCurrentSentence, setShowInput, setShowMicrophone, setShowAnimation, setMicrophoneUnlocked } = uiSlice.actions;
 export default uiSlice.reducer;
