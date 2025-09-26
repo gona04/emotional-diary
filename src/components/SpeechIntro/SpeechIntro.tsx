@@ -4,6 +4,7 @@ import { useStreamingASR } from '../../hooks';
 import { useAppDispatch } from '../../store/hooks';
 import { addMessage, fetchBotReply } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
+import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 
 type Props = {
   currentSentence: number;
@@ -20,6 +21,15 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   const lastFinalRef = useRef<string>('');
 
   const wsUrl = (process.env.REACT_APP_STREAMING_WS_URL || 'ws://localhost:8765').replace(/\/$/, '');
+    const sentences = [
+    "Hello...",
+    `How high are you?`,
+    "Sorry",
+    "I meant to ask",
+    "Hi..",
+    "How are you?",
+    "Feel free to share about your day with me :)"
+  ];
 
   // streaming hook (real streaming). Logs partial/final transcripts.
   const { start, stop } = useStreamingASR(wsUrl, (p: string) => {
@@ -50,9 +60,11 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   }, { simulate: false });
 
   useEffect(() => {
-    try { dispatch(setMicrophoneUnlocked(true)); } catch (e) {}
-    try { setShowMicrophone(true); } catch (e) {}
-    try { dispatch(setShowMicrophoneAction(true)); } catch (e) {}
+    // Keep the microphone hidden and locked until the intro script finishes.
+    try { dispatch(setMicrophoneUnlocked(false)); } catch (e) {}
+    try { setShowMicrophone(false); } catch (e) {}
+    try { dispatch(setShowMicrophoneAction(false)); } catch (e) {}
+    // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -66,6 +78,16 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   return (
     <div className="background-pink">
       <div className="speech-content">
+                <div className={`intro-view ${showMicrophone ? 'hidden' : 'visible'}`} aria-hidden={showMicrophone}>
+          {currentSentence < sentences.length && sentences[currentSentence]}
+          <SpeechSynthesisComponent
+            sentences={sentences}
+            currentSentence={currentSentence}
+            setCurrentSentence={setCurrentSentence}
+            setShowMicrophone={setShowMicrophone}
+          />
+          {/* Background sound options moved to global top-right picker */}
+        </div>
         <div className={`mic-view ${showMicrophone ? 'visible' : 'hidden'}`} aria-hidden={!showMicrophone}>
           <div className="mic-coverer">
             <div className='mic-cover'>
