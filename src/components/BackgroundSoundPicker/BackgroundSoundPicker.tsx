@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './BackgroundSoundPicker.css';
 import CustomSelect from './CustomSelect';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setShowInput, setShowMicrophone, setShowAnimation } from '../../store/uiSlice';
+import { setShowAnimation } from '../../store/uiSlice';
 import { setPromptMode, setShowPromptInfo, setPromptInfoText } from '../../store/promptSlice';
 import { setPreviewId, setTopPreviewId, setPadPlaying, setPadStartTime, setPadBpm } from '../../store/audioSlice';
 
@@ -30,8 +30,6 @@ const BackgroundSoundPicker: React.FC = () => {
     }
   }, [showPromptInfo]);
   const dispatch = useAppDispatch();
-  const showMicrophone = useAppSelector(s => s.ui.showMicrophone);
-  const showInput = useAppSelector(s => s.ui.showInput);
   const showAnimation = useAppSelector(s => s.ui.showAnimation);
   const previewId = useAppSelector((s) => s.audio.previewId);
   const topPreviewId = useAppSelector((s) => s.audio.topPreviewId);
@@ -43,14 +41,6 @@ const BackgroundSoundPicker: React.FC = () => {
     window.setTimeout(() => setClickedId(null), 220);
     fn();
   }, []);
-
-  const toggleMicrophone = useCallback(() => {
-    dispatch(setShowMicrophone(!showMicrophone));
-  }, [dispatch, showMicrophone]);
-
-  const toggleChat = useCallback(() => {
-    dispatch(setShowInput(!showInput));
-  }, [dispatch, showInput]);
 
   const toggleAnimation = useCallback(() => {
     dispatch(setShowAnimation(!showAnimation));
@@ -368,6 +358,8 @@ const BackgroundSoundPicker: React.FC = () => {
             </div>
 
             <div className="nav-actions" role="toolbar" aria-label="actions">
+              {/* Speak button temporarily disabled */}
+              {/*
               <div
                 className={`nav-action ${showMicrophone ? 'active' : ''} ${clickedId === 'speak' ? 'clicked' : ''}`}
                 onClick={() => onActivate('speak', toggleMicrophone)}
@@ -389,6 +381,7 @@ const BackgroundSoundPicker: React.FC = () => {
               >
                 Chat
               </div>
+              */}
 
               {promptMode === 'Walk With Me' && (
                 <div

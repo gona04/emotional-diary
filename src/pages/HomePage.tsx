@@ -24,7 +24,10 @@ const HomePage: React.FC = () => {
       </FadeMount>
 
       <FadeMount show={showInput}>
-        <Chatbot onClose={() => dispatch(setShowInput(false))} />
+        <Chatbot onClose={() => {
+          dispatch(setShowInput(false));
+          dispatch(setShowMicrophone(true));
+        }} />
       </FadeMount>
 
       {/* Floating Chat Icon - only show when chat is not already open */}

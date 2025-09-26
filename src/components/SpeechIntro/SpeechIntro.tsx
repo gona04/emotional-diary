@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 import './SpeechIntro.css';
 import { useStreamingASR } from '../../hooks';
 import { useAppDispatch } from '../../store/hooks';
 import { addMessage, fetchBotReply } from '../../store/chatSlice';
+import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
 
 type Props = {
   currentSentence: number;
@@ -15,15 +15,6 @@ type Props = {
 
 const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenChat, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
-  const sentences = [
-    "Hello...",
-    `How high are you?`,
-    "Sorry",
-    "I meant to ask",
-    "Hi..",
-    "How are you?",
-    "Feel free to share about your day with me :)"
-  ];
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const lastFinalRef = useRef<string>('');
@@ -59,6 +50,13 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   }, { simulate: false });
 
   useEffect(() => {
+    try { dispatch(setMicrophoneUnlocked(true)); } catch (e) {}
+    try { setShowMicrophone(true); } catch (e) {}
+    try { dispatch(setShowMicrophoneAction(true)); } catch (e) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     return () => {
       try { stop(); } catch (e) {}
       lastFinalRef.current = '';
@@ -68,17 +66,6 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   return (
     <div className="background-pink">
       <div className="speech-content">
-        <div className={`intro-view ${showMicrophone ? 'hidden' : 'visible'}`} aria-hidden={showMicrophone}>
-          {currentSentence < sentences.length && sentences[currentSentence]}
-          <SpeechSynthesisComponent
-            sentences={sentences}
-            currentSentence={currentSentence}
-            setCurrentSentence={setCurrentSentence}
-            setShowMicrophone={setShowMicrophone}
-          />
-          {/* Background sound options moved to global top-right picker */}
-        </div>
-
         <div className={`mic-view ${showMicrophone ? 'visible' : 'hidden'}`} aria-hidden={!showMicrophone}>
           <div className="mic-coverer">
             <div className='mic-cover'>
