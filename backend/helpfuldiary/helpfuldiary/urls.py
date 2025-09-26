@@ -17,7 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-# Recording/upload routes removed — server no longer accepts audio uploads.
+from .views import mistral_chat
+
+# API routes for admin and chat proxy.
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/mistral/chat/', mistral_chat, name='mistral-chat'),
 ]

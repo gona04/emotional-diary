@@ -11,14 +11,19 @@ type Props = {
 
 const Chatbot: React.FC<Props> = ({ onClose }) => {
   const messages = useAppSelector((s: any) => s.chat.messages || []);
+  const loading = useAppSelector((s: any) => s.chat.loading);
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const greetedRef = useRef(false);
 
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    // Greet when the chatbot mounts
-    dispatch(addMessage({ from: 'bot', text: 'Hi — I\'m your friendly diary assistant. How can I help today?' }));
+    // Greet when the chatbot mounts (only once)
+    if (!greetedRef.current) {
+      dispatch(addMessage({ from: 'bot', text: 'Hi — I\'m your friendly diary assistant. How can I help today?' }));
+      greetedRef.current = true;
+    }
     inputRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -28,10 +33,7 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
     if (!trimmed) return;
     dispatch(addMessage({ from: 'user', text: trimmed }));
     setInput('');
-    // dispatch async thunk to generate bot reply (simulated)
-  // dispatch async thunk to generate bot reply (simulated)
-  // cast to any to satisfy the TS inference for thunk action here
-  dispatch(fetchBotReply(trimmed) as any);
+    dispatch(fetchBotReply(trimmed) as any);
   };
 
   return (
@@ -56,11 +58,17 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') send(input);
+            if (e.key === 'Enter' && !loading) send(input);
           }}
+          disabled={loading}
         />
-        <button onClick={() => send(input)}>Send</button>
+        <button onClick={() => send(input)} disabled={loading}>{loading ? 'Thinking…' : 'Send'}</button>
       </div>
+      {loading && (
+        <div className="chat-loading" role="status" aria-live="polite">
+          Thinking with you…
+        </div>
+      )}
       </div>
     </div>
   );

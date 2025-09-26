@@ -1,5 +1,39 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
+const BACKEND_BASE_URL = (process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+async function callMistralProxy(userText: string): Promise<string> {
+  const fetchFn: typeof fetch | undefined = typeof fetch === 'function' ? fetch : undefined;
+  if (!fetchFn) {
+    console.error('Global fetch API is not available in this environment.');
+    return "I'm having trouble connecting right now, but I'm still here to listen.";
+  }
+  try {
+    const response = await fetchFn(`${BACKEND_BASE_URL}/api/mistral/chat/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt: userText }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Backend error ${response.status}: ${detail}`);
+    }
+
+    const data = await response.json();
+    const text = (data?.text || '').trim();
+    if (!text) {
+      throw new Error('Empty response from assistant');
+    }
+    return text;
+  } catch (err: any) {
+    console.error('Failed calling Mistral backend', err);
+    return "I ran into a hiccup reaching the journal companion. Could you try again in a moment?";
+  }
+}
+
 export type Message = { from: 'user' | 'bot'; text: string };
 
 export type ChatState = {
@@ -9,22 +43,8 @@ export type ChatState = {
 
 const initialState: ChatState = { messages: [], loading: false };
 
-// Async thunk to simulate fetching a bot reply (placeholder for real API)
 export const fetchBotReply = createAsyncThunk('chat/fetchBotReply', async (userText: string) => {
-  // Simple heuristic-based reply (could be replaced with API call)
-  const lowered = userText.toLowerCase();
-  let reply = "I'm here to listen. Tell me more.";
-  if (lowered.includes('sad') || lowered.includes('unhappy') || lowered.includes('depressed')) {
-    reply = "I'm sorry you're feeling down. Would you like a grounding exercise?";
-  } else if (lowered.includes('happy') || lowered.includes('good') || lowered.includes('great')) {
-    reply = "That's wonderful to hear — tell me more about what's going well.";
-  } else if (lowered.includes('help')) {
-    reply = "I can listen or offer small suggestions — what would you prefer?";
-  }
-
-  // simulate network latency
-  await new Promise((r) => setTimeout(r, 600 + Math.random() * 600));
-  return reply;
+  return callMistralProxy(userText);
 });
 
 const chatSlice = createSlice({

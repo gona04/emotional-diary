@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 import './SpeechIntro.css';
 import { useStreamingASR } from '../../hooks';
-// ...existing code...
+import { useAppDispatch } from '../../store/hooks';
+import { addMessage, fetchBotReply } from '../../store/chatSlice';
 
 type Props = {
   currentSentence: number;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenChat, setCurrentSentence, setShowMicrophone }) => {
+  const dispatch = useAppDispatch();
   const sentences = [
     "Hello...",
     `How high are you?`,
@@ -24,18 +26,41 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   ];
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const lastFinalRef = useRef<string>('');
+
+  const wsUrl = (process.env.REACT_APP_STREAMING_WS_URL || 'ws://localhost:8765').replace(/\/$/, '');
 
   // streaming hook (real streaming). Logs partial/final transcripts.
-  const { start, stop } = useStreamingASR('ws://localhost:8765', (p: string) => {
-    console.log('[ASR partial]', p);
+  const { start, stop } = useStreamingASR(wsUrl, (p: string) => {
+    const partial = (p || '').trim();
+    if (!partial) return;
+    console.log('[ASR partial]', partial);
   }, (f: string) => {
-    console.log('[ASR final]', f);
-    // you can dispatch this text to Redux or call a RAG search here
+    const trimmed = (f || '').trim();
+    if (!trimmed || trimmed === lastFinalRef.current) return;
+    lastFinalRef.current = trimmed;
+
+    console.log('[ASR final]', trimmed);
+
+    try {
+      stop();
+    } catch (e) {
+      console.warn('Failed to stop streaming after final transcript', e);
+    }
+
+    setIsPaused(false);
+    try { setShowMicrophone(false); } catch (e) { /* ignore */ }
+
+    dispatch(addMessage({ from: 'user', text: trimmed }));
+    dispatch(fetchBotReply(trimmed) as any);
+
+    try { onOpenChat(); } catch (e) { console.warn('Failed to open chat', e); }
   }, { simulate: false });
 
   useEffect(() => {
     return () => {
       try { stop(); } catch (e) {}
+      lastFinalRef.current = '';
     };
   }, [stop]);
 
@@ -63,6 +88,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
                     const next = !isPaused;
                     setIsPaused(next);
                     if (next) {
+                      lastFinalRef.current = '';
                       // start streaming
                       await start();
                     } else {
