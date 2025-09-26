@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 import './SpeechIntro.css';
+import { useStreamingASR } from '../../hooks';
 // ...existing code...
 
 type Props = {
@@ -24,6 +25,20 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
 
+  // streaming hook (real streaming). Logs partial/final transcripts.
+  const { start, stop } = useStreamingASR('ws://localhost:8765', (p: string) => {
+    console.log('[ASR partial]', p);
+  }, (f: string) => {
+    console.log('[ASR final]', f);
+    // you can dispatch this text to Redux or call a RAG search here
+  }, { simulate: false });
+
+  useEffect(() => {
+    return () => {
+      try { stop(); } catch (e) {}
+    };
+  }, [stop]);
+
   return (
     <div className="background-pink">
       <div className="speech-content">
@@ -43,7 +58,19 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
             <div className='mic-cover'>
               <button
                 className="microphone-icon"
-                onClick={() => { try { setIsPaused(!isPaused); } catch (e) {} }}
+                onClick={async () => {
+                  try {
+                    const next = !isPaused;
+                    setIsPaused(next);
+                    if (next) {
+                      // start streaming
+                      await start();
+                    } else {
+                      // stop streaming
+                      stop();
+                    }
+                  } catch (e) { console.warn('mic toggle error', e); }
+                }}
                 aria-pressed={isPaused}
                 aria-label={isPaused ? 'Resume' : 'Pause'}
               >
