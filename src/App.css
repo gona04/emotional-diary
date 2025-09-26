@@ -139,3 +139,42 @@ button.microphone-icon {
 .global-bg-picker { position: fixed; top: 0.75rem; right: 0.75rem; left: auto; z-index: 1200; }
 .bg-sound-picker.small { background: rgba(255,255,255,0.9); padding: 0.5rem; box-shadow: 0 6px 18px rgba(0,0,0,0.08); border-radius: 10px; }
 
+/* Floating Chat Icon */
+.chat-icon-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background-color: rgb(239, 87, 113);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(239, 87, 113, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.chat-icon-button:hover {
+  background-color: rgb(239, 141, 156);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(239, 87, 113, 0.4);
+}
+
+.chat-icon-button:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .chat-icon-button {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+  }
+}
+

@@ -49,12 +49,13 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
     }
 
     setIsPaused(false);
-    try { setShowMicrophone(false); } catch (e) { /* ignore */ }
 
     dispatch(addMessage({ from: 'user', text: trimmed }));
     dispatch(fetchBotReply(trimmed) as any);
 
-    try { onOpenChat(); } catch (e) { console.warn('Failed to open chat', e); }
+    // Note: Chat will only open when user clicks the chat icon, not automatically
+    // User input has been processed and bot reply is being prepared
+    console.log('Voice input processed. Click the chat icon to view conversation.');
   }, { simulate: false });
 
   useEffect(() => {
