@@ -70,4 +70,4 @@ npm install
 npm start
 ```
 
-The UI opens at http://localhost:3000. The chat panel calls the Django proxy (`/api/mistral/chat/`) which relays prompts to Mistral and returns the assistant response.
+The UI opens at http://localhost:3000. The chat panel and microphone now exchange both transcripts and assistant replies directly with the streaming WebSocket server, which relays prompts to Mistral and streams the responses back to the browser.

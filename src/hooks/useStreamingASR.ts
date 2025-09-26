@@ -34,7 +34,15 @@ type StreamingOptions = {
   simulate?: boolean;
 };
 
-export function useStreamingASR(wsUrl: string, onPartial: (t: string) => void, onFinal: (t: string) => void, options?: StreamingOptions) {
+type AssistantCallback = (text: string, payload?: Record<string, unknown>) => void;
+
+export function useStreamingASR(
+  wsUrl: string,
+  onPartial: (t: string) => void,
+  onFinal: (t: string) => void,
+  onAssistant?: AssistantCallback,
+  options?: StreamingOptions
+) {
   const wsRef = useRef<WebSocket | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const nodeRef = useRef<AudioWorkletNode | null>(null);
@@ -189,7 +197,12 @@ export function useStreamingASR(wsUrl: string, onPartial: (t: string) => void, o
           const msg = JSON.parse(ev.data as string);
           if (msg.partial) onPartial(msg.partial);
           if (msg.text && msg.final) onFinal(msg.text);
-        } catch (e) { console.log('ws msg', ev.data); }
+          if (msg.type === 'assistant' && typeof msg.text === 'string') {
+            onAssistant?.(msg.text, msg);
+          }
+        } catch (e) {
+          console.log('ws msg', ev.data);
+        }
       };
       wsRef.current = ws;
     } catch (e) {

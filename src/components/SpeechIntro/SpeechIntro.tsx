@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './SpeechIntro.css';
 import { useStreamingASR } from '../../hooks';
-import { useAppDispatch } from '../../store/hooks';
-import { addMessage, fetchBotReply } from '../../store/chatSlice';
+import useChatSocket from '../../hooks/useChatSocket';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { addMessage, setLoading } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 
@@ -16,12 +17,15 @@ type Props = {
 
 const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenChat, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
+  const microphoneUnlocked = useAppSelector((s: any) => s.ui.microphoneUnlocked);
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const lastFinalRef = useRef<string>('');
+  const didInitRef = useRef<boolean>(false);
+  const [micVisible, setMicVisible] = useState<boolean>(false);
 
   const wsUrl = (process.env.REACT_APP_STREAMING_WS_URL || 'ws://localhost:8765').replace(/\/$/, '');
-    const sentences = [
+  const sentences = [
     "Hello...",
     `How high are you?`,
     "Sorry",
@@ -30,6 +34,15 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
     "How are you?",
     "Feel free to share about your day with me :)"
   ];
+
+  const handleAssistant = useCallback((text: string) => {
+    const trimmed = (text || '').trim();
+    if (!trimmed) return;
+    dispatch(addMessage({ from: 'bot', text: trimmed }));
+    dispatch(setLoading(false));
+  }, [dispatch]);
+
+  const { sendMessage: sendChatMessage } = useChatSocket(handleAssistant);
 
   // streaming hook (real streaming). Logs partial/final transcripts.
   const { start, stop } = useStreamingASR(wsUrl, (p: string) => {
@@ -52,21 +65,42 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
     setIsPaused(false);
 
     dispatch(addMessage({ from: 'user', text: trimmed }));
-    dispatch(fetchBotReply(trimmed) as any);
+    dispatch(setLoading(true));
+    sendChatMessage(trimmed);
 
     // Note: Chat will only open when user clicks the chat icon, not automatically
     // User input has been processed and bot reply is being prepared
     console.log('Voice input processed. Click the chat icon to view conversation.');
-  }, { simulate: false });
+  }, handleAssistant, { simulate: false });
 
   useEffect(() => {
+    if (showMicrophone) {
+      const raf: (fn: FrameRequestCallback) => number = typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : ((fn: FrameRequestCallback) => setTimeout(fn, 16)) as unknown as (fn: FrameRequestCallback) => number;
+
+      const cancel: (id: number) => void = typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function'
+        ? window.cancelAnimationFrame.bind(window)
+        : ((id: number) => clearTimeout(id));
+
+      const id = raf(() => setMicVisible(true));
+      return () => cancel(id);
+    } else {
+      setMicVisible(false);
+    }
+  }, [showMicrophone]);
+
+  useEffect(() => {
+    if (microphoneUnlocked || didInitRef.current) {
+      return;
+    }
+    didInitRef.current = true;
     // Keep the microphone hidden and locked until the intro script finishes.
     try { dispatch(setMicrophoneUnlocked(false)); } catch (e) {}
     try { setShowMicrophone(false); } catch (e) {}
     try { dispatch(setShowMicrophoneAction(false)); } catch (e) {}
-    // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dispatch, setShowMicrophone, microphoneUnlocked]);
 
   useEffect(() => {
     return () => {
@@ -78,7 +112,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   return (
     <div className="background-pink">
       <div className="speech-content">
-                <div className={`intro-view ${showMicrophone ? 'hidden' : 'visible'}`} aria-hidden={showMicrophone}>
+                <div className={`intro-view ${micVisible ? 'hidden' : 'visible'}`} aria-hidden={showMicrophone}>
           {currentSentence < sentences.length && sentences[currentSentence]}
           <SpeechSynthesisComponent
             sentences={sentences}
@@ -88,7 +122,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
           />
           {/* Background sound options moved to global top-right picker */}
         </div>
-        <div className={`mic-view ${showMicrophone ? 'visible' : 'hidden'}`} aria-hidden={!showMicrophone}>
+  <div className={`mic-view ${micVisible ? 'visible' : 'hidden'}`} aria-hidden={!showMicrophone}>
           <div className="mic-coverer">
             <div className='mic-cover'>
               <button

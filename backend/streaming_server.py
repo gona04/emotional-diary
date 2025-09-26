@@ -16,9 +16,11 @@ import sys
 import tempfile
 import time
 import uuid
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from typing import Any, Optional
+
+import requests
 
 try:
     import websockets
@@ -39,6 +41,7 @@ VOSK_MODEL_PATH = pathlib.Path(os.environ.get('VOSK_MODEL_PATH', '') or (pathlib
 _VOSK_MODEL = None
 
 LOG = logging.getLogger('streaming_server')
+
 logging.basicConfig(level=logging.INFO)
 
 DEFAULT_SAMPLE_RATE = 16000
@@ -49,6 +52,39 @@ PCM_DIR = pathlib.Path(os.environ.get('STREAM_PCM_DIR', tempfile.gettempdir()))
 HOST = os.environ.get('STREAM_SERVER_HOST', '0.0.0.0')
 PORT = int(os.environ.get('STREAM_SERVER_PORT', '8765'))
 
+MISTRAL_CHAT_URL = 'https://api.mistral.ai/v1/chat/completions'
+MISTRAL_API_KEY = os.environ.get('MISTRAL_API_KEY', 'p9EhA0yBPa3BM6VJ6UCkeZiUVohyCNqQ').strip()
+MISTRAL_MODEL = os.environ.get('MISTRAL_MODEL', 'mistral-small-latest').strip() or 'mistral-small-latest'
+MISTRAL_TIMEOUT = float(os.environ.get('MISTRAL_TIMEOUT', '30'))
+MISTRAL_SYSTEM_PROMPT = os.environ.get('MISTRAL_SYSTEM_PROMPT', """
+                                                                    You are an experienced therapist. Use the provided Quality of Life (QoL) framework to assess a client’s current wellbeing. Ask follow-up questions if you do not have enough information to make a judgment. Analyze responses across all 10 dimensions of QoL and provide guidance according to the client’s scores.
+
+                                                                    When giving your output, use the following structured format exactly:
+
+                                                                    Session Date: [YYYY-MM-DD]
+                                                                    Mode / Therapy: [Casual / Quick Solutions / Schema / EMDR]
+                                                                    Client Mood: [Brief description based on QoL analysis]
+                                                                    Presenting Problem: [Client’s main concern or reason for session]
+                                                                    Observations: [Key insights from responses, verbal/non-verbal cues if available]
+                                                                    Interventions Applied: [Tools, strategies, or questions used in this session]
+                                                                    Client Response: [How the client reacted, engaged, or reflected]
+                                                                    Patterns Noted: [Recurring themes, strengths, or challenges over time]
+                                                                    Recommendations / Next Steps: [Actionable steps, follow-up, or resources]
+
+                                                                    Guidelines:
+                                                                    - Interpret QoL answers according to their scoring thresholds (low, medium, high) for each parameter.
+                                                                    - Include suggestions from QoL guidance where appropriate.
+                                                                    - If the client’s responses indicate distress or crisis, include the appropriate safety note.
+                                                                    - When necessary, ask concise follow-up questions to clarify unclear areas.
+                                                                    - Keep language professional, empathetic, and supportive.
+                                                                    - Focus on strengths, areas for growth, and actionable next steps.
+
+                                                                    Your goal: produce **one structured session note per client interaction**, reflecting both the analysis and therapeutic guidance.
+
+ """).strip()
+
+DEFAULT_ASSISTANT_FALLBACK = "I'm here and listening."
+
 
 @dataclass
 class HandshakeResult:
@@ -56,6 +92,7 @@ class HandshakeResult:
     simulate: bool
     recognizer: Optional[Any]
     mode: str
+    chat: bool
 
 
 class HandshakeError(Exception):
@@ -97,11 +134,14 @@ async def _perform_handshake(ws, conn_id: str, send_json) -> HandshakeResult:
     if obj.get('type') != 'handshake':
         raise HandshakeError('First message must be a handshake frame')
 
+    chat_mode = bool(obj.get('chat', False))
     sample_rate = int(obj.get('sampleRate', DEFAULT_SAMPLE_RATE))
-    simulate = bool(obj.get('simulate', False))
+    simulate = bool(obj.get('simulate', False)) or chat_mode
     recognizer: Optional[Any] = None
 
-    if not simulate:
+    if chat_mode:
+        mode = 'chat'
+    elif not simulate:
         if HAVE_VOSK:
             try:
                 model = ensure_vosk_model()
@@ -126,12 +166,12 @@ async def _perform_handshake(ws, conn_id: str, send_json) -> HandshakeResult:
                 'message': 'Install vosk and download a model to enable real transcription.'
             })
             simulate = True
+        if not chat_mode:
+            mode = 'simulate' if simulate else 'vosk'
+        await send_json({'type': 'handshake_ack', 'ok': True, 'mode': mode, 'chat': chat_mode})
+        LOG.info('Handshake %s sampleRate=%s simulate=%s chat=%s mode=%s', conn_id, sample_rate, simulate, chat_mode, mode)
 
-    mode = 'simulate' if simulate else 'vosk'
-    await send_json({'type': 'handshake_ack', 'ok': True, 'mode': mode})
-    LOG.info('Handshake %s sampleRate=%s simulate=%s mode=%s', conn_id, sample_rate, simulate, mode)
-
-    return HandshakeResult(sample_rate=sample_rate, simulate=simulate, recognizer=recognizer, mode=mode)
+        return HandshakeResult(sample_rate=sample_rate, simulate=simulate, recognizer=recognizer, mode=mode, chat=chat_mode)
 
 
 def _discover_model_path() -> pathlib.Path:
@@ -174,6 +214,77 @@ def ensure_vosk_model() -> Any:
     return _VOSK_MODEL
 
 
+def _build_mistral_messages(user_text: str):
+    messages = []
+    if MISTRAL_SYSTEM_PROMPT:
+        messages.append({'role': 'system', 'content': MISTRAL_SYSTEM_PROMPT})
+    messages.append({'role': 'user', 'content': user_text})
+    return messages
+
+
+async def call_mistral(prompt: str) -> Optional[str]:
+    prompt = (prompt or '').strip()
+    if not prompt:
+        return None
+    if not MISTRAL_API_KEY:
+        LOG.debug('Mistral API key not set; skipping call')
+        return None
+
+    def _request() -> Optional[str]:
+        headers = {
+            'Authorization': f'Bearer {MISTRAL_API_KEY}',
+            'Content-Type': 'application/json',
+        }
+        payload = {
+            'model': MISTRAL_MODEL,
+            'messages': _build_mistral_messages(prompt),
+        }
+        try:
+            response = requests.post(
+                MISTRAL_CHAT_URL,
+                headers=headers,
+                json=payload,
+                timeout=MISTRAL_TIMEOUT,
+            )
+        except requests.RequestException as exc:
+            LOG.warning('Mistral request failed: %s', exc)
+            return None
+
+        if response.status_code >= 400:
+            LOG.warning('Mistral returned error %s: %s', response.status_code, response.text[:200])
+            return None
+
+        try:
+            data = response.json()
+        except ValueError:
+            LOG.warning('Mistral returned non-JSON payload: %s', response.text[:200])
+            return None
+
+        choices = data.get('choices') or []
+        message = choices[0].get('message') if choices else None
+        content = (message or {}).get('content', '').strip()
+        return content or None
+
+    try:
+        return await asyncio.to_thread(_request)
+    except Exception:  # pragma: no cover - defensive
+        LOG.exception('Unexpected error while calling Mistral')
+        return None
+
+
+async def send_assistant_reply(send_json, user_text: str, mode: str) -> None:
+    reply = await call_mistral(user_text)
+    if reply:
+        await send_json({'type': 'assistant', 'text': reply, 'mode': mode})
+    else:
+        await send_json({
+            'type': 'assistant',
+            'text': DEFAULT_ASSISTANT_FALLBACK,
+            'mode': mode,
+            'error': True,
+        })
+
+
 async def handler(ws, path=None):
     conn_id = str(uuid.uuid4())[:8]
     LOG.info('New connection %s path=%s', conn_id, path)
@@ -207,16 +318,21 @@ async def handler(ws, path=None):
         handshake_mode = handshake.mode
         sample_rate = handshake.sample_rate
 
-        with _pcm_sink(conn_id) as (pcm_file, saved_path):
+        pcm_context = _pcm_sink(conn_id) if not handshake.chat else nullcontext((None, None))
+
+        with pcm_context as (pcm_file, saved_path):
             pcm_path = saved_path
             last_partial = ''
             last_progress_ts = time.monotonic()
 
-            if handshake.simulate and recognizer is None:
+            if handshake.simulate and recognizer is None and not handshake.chat:
                 sim_task = asyncio.create_task(simulate_loop())
 
             async for data in ws:
                 if isinstance(data, (bytes, bytearray, memoryview)):
+                    if handshake.chat:
+                        LOG.debug('Ignoring binary payload in chat mode for %s', conn_id)
+                        continue
                     audio_bytes = data if isinstance(data, (bytes, bytearray)) else bytes(data)
 
                     if pcm_file is not None:
@@ -241,6 +357,7 @@ async def handler(ws, path=None):
                                 LOG.info('Vosk final (%s): %s', conn_id, text)
                                 await send_json({'type': 'final', 'text': text, 'final': True})
                                 last_partial = ''
+                                await send_assistant_reply(send_json, text, handshake_mode)
                         else:
                             try:
                                 partial_obj = json.loads(recognizer.PartialResult())
@@ -254,9 +371,19 @@ async def handler(ws, path=None):
                 else:
                     try:
                         obj = json.loads(data)
-                        LOG.info('Got text message %s: %s', conn_id, obj)
                     except Exception:
                         LOG.info('Received non-binary message from %s', conn_id)
+                        continue
+
+                    msg_type = obj.get('type')
+                    if msg_type in {'user_text', 'chat'}:
+                        user_text = (obj.get('text') or '').strip()
+                        if not user_text:
+                            continue
+                        LOG.info('Chat message (%s): %s', conn_id, user_text)
+                        await send_assistant_reply(send_json, user_text, handshake_mode or 'chat')
+                    else:
+                        LOG.info('Got text message %s: %s', conn_id, obj)
 
     except HandshakeError as exc:
         LOG.warning('Handshake failed %s: %s', conn_id, exc)

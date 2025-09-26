@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './Chatbot.css';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addMessage, fetchBotReply } from '../store/chatSlice';
+import { addMessage, setLoading } from '../store/chatSlice';
+import useChatSocket from '../hooks/useChatSocket';
 
 // bot replies are produced by the async thunk in the chat slice
 
@@ -18,6 +19,15 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
 
   const dispatch = useAppDispatch();
 
+  const handleAssistant = useCallback((text: string) => {
+    const trimmed = (text || '').trim();
+    if (!trimmed) return;
+    dispatch(addMessage({ from: 'bot', text: trimmed }));
+    dispatch(setLoading(false));
+  }, [dispatch]);
+
+  const { ready, sendMessage } = useChatSocket(handleAssistant);
+
   useEffect(() => {
     // Greet when the chatbot mounts (only once)
     if (!greetedRef.current) {
@@ -33,7 +43,8 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
     if (!trimmed) return;
     dispatch(addMessage({ from: 'user', text: trimmed }));
     setInput('');
-    dispatch(fetchBotReply(trimmed) as any);
+    dispatch(setLoading(true));
+    sendMessage(trimmed);
   };
 
   return (
@@ -58,11 +69,11 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !loading) send(input);
+            if (e.key === 'Enter' && !loading && ready) send(input);
           }}
-          disabled={loading}
+          disabled={loading || !ready}
         />
-        <button onClick={() => send(input)} disabled={loading}>{loading ? 'Thinking…' : 'Send'}</button>
+        <button onClick={() => send(input)} disabled={loading || !ready}>{loading ? 'Thinking…' : 'Send'}</button>
       </div>
       {loading && (
         <div className="chat-loading" role="status" aria-live="polite">
