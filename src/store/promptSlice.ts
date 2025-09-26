@@ -7,7 +7,7 @@ type PromptState = {
 };
 
 const initialState: PromptState = {
-  promptMode: 'Walk With Me',
+  promptMode: 'Casual talk',
   showPromptInfo: false,
   promptInfoText: '',
 };
