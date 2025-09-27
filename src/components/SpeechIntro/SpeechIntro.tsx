@@ -3,7 +3,7 @@ import './SpeechIntro.css';
 import { useStreamingASR } from '../../hooks';
 import useChatSocket from '../../hooks/useChatSocket';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { addMessage, setLoading } from '../../store/chatSlice';
+import { addMessage } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 
@@ -38,11 +38,11 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
   const handleAssistant = useCallback((text: string) => {
     const trimmed = (text || '').trim();
     if (!trimmed) return;
+    console.log('[AI Response]', trimmed);
     dispatch(addMessage({ from: 'bot', text: trimmed }));
-    dispatch(setLoading(false));
   }, [dispatch]);
 
-  const { sendMessage: sendChatMessage } = useChatSocket(handleAssistant);
+  useChatSocket(handleAssistant);
 
   // streaming hook (real streaming). Logs partial/final transcripts.
   const { start, stop } = useStreamingASR(wsUrl, (p: string) => {
@@ -56,21 +56,11 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
 
     console.log('[ASR final]', trimmed);
 
-    try {
-      stop();
-    } catch (e) {
-      console.warn('Failed to stop streaming after final transcript', e);
-    }
-
-    setIsPaused(false);
+    // Don't stop the connection automatically - keep listening for AI response and more speech
+    // User can manually click pause when done
 
     dispatch(addMessage({ from: 'user', text: trimmed }));
-    dispatch(setLoading(true));
-    sendChatMessage(trimmed);
-
-    // Note: Chat will only open when user clicks the chat icon, not automatically
-    // User input has been processed and bot reply is being prepared
-    console.log('Voice input processed. Click the chat icon to view conversation.');
+    // Backend automatically calls Mistral after final transcript, no need to send again
   }, handleAssistant, { simulate: false });
 
   useEffect(() => {

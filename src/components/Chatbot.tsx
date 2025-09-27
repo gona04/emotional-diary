@@ -26,7 +26,7 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
     dispatch(setLoading(false));
   }, [dispatch]);
 
-  const { ready, sendMessage } = useChatSocket(handleAssistant);
+  const { sendMessage } = useChatSocket(handleAssistant);
 
   useEffect(() => {
     // Greet when the chatbot mounts (only once)
@@ -69,17 +69,12 @@ const Chatbot: React.FC<Props> = ({ onClose }) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !loading && ready) send(input);
+            if (e.key === 'Enter' && !loading) send(input);
           }}
-          disabled={loading || !ready}
+          disabled={loading}
         />
-        <button onClick={() => send(input)} disabled={loading || !ready}>{loading ? 'Thinking…' : 'Send'}</button>
+  <button onClick={() => send(input)} disabled={loading}>{loading ? 'Thinking…' : 'Send'}</button>
       </div>
-      {loading && (
-        <div className="chat-loading" role="status" aria-live="polite">
-          Thinking with you…
-        </div>
-      )}
       </div>
     </div>
   );
