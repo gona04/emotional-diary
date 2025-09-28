@@ -35,12 +35,91 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
     "Feel free to share about your day with me :)"
   ];
 
+  // Add state to track if we should speak responses
+  const [shouldSpeakResponses, setShouldSpeakResponses] = useState(true);
+  
   const handleAssistant = useCallback((text: string) => {
     const trimmed = (text || '').trim();
     if (!trimmed) return;
     console.log('[AI Response]', trimmed);
-    dispatch(addMessage({ from: 'bot', text: trimmed }));
-  }, [dispatch]);
+    
+    // Try to parse JSON response and extract therapist_response for speech
+    let therapistResponse = trimmed;
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.therapist_response) {
+        therapistResponse = parsed.therapist_response;
+      }
+    } catch (e) {
+      // If not JSON, use the raw text
+      console.log('[AI Response] Not JSON, using raw text for speech');
+    }
+
+    // Add to chat store
+    dispatch(addMessage({ from: 'bot', text: therapistResponse }));
+    
+    // Speak the therapist response using text-to-speech (only if enabled and microphone is not actively listening)
+    if (therapistResponse && shouldSpeakResponses && 'speechSynthesis' in window && !isPaused) {
+      // Add a small delay to ensure any audio processing is complete
+      setTimeout(() => {
+        // Stop any currently speaking utterances
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(therapistResponse);
+        
+        // Function to get the best available voice (same as intro)
+        const getBestVoice = () => {
+          const voices = window.speechSynthesis.getVoices();
+          
+          // Try to find a natural-sounding English voice
+          const preferredVoices = [
+            'Samantha', 'Alex', 'Victoria', 'Karen', 'Moira', 'Tessa', // macOS voices
+            'Google US English', 'Microsoft Zira Desktop', 'Microsoft David Desktop', // Other systems
+          ];
+          
+          for (const voiceName of preferredVoices) {
+            const voice = voices.find(v => v.name.includes(voiceName));
+            if (voice) return voice;
+          }
+          
+          // Fallback to any English voice
+          return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
+        };
+        
+        const selectedVoice = getBestVoice();
+        utterance.voice = selectedVoice;
+        
+        // More natural voice settings
+        utterance.pitch = 1.0;   // Natural pitch
+        utterance.rate = 0.85;   // Slightly slower for therapeutic, calming effect
+        utterance.volume = 0.9;  // Comfortable volume
+        
+        // Add slight pauses for more natural speech
+        const naturalText = therapistResponse
+          .replace(/\. /g, '... ')  // Add pauses after sentences
+          .replace(/\? /g, '?.. ')  // Add pauses after questions
+          .replace(/! /g, '!.. ');  // Add pauses after exclamations
+        
+        utterance.text = naturalText;
+        
+        utterance.onstart = () => {
+          console.log('[TTS] Started speaking therapist response with voice:', selectedVoice?.name || 'default');
+        };
+        
+        utterance.onend = () => {
+          console.log('[TTS] Finished speaking therapist response');
+        };
+        
+        utterance.onerror = (e) => {
+          console.error('[TTS] Speech synthesis error:', e);
+        };
+        
+        // Speak the response
+        window.speechSynthesis.speak(utterance);
+        console.log('[TTS] Speaking therapist response with enhanced voice');
+      }, 500); // 500ms delay to ensure smooth transition
+    }
+  }, [dispatch, shouldSpeakResponses, isPaused]);
 
   useChatSocket(handleAssistant);
 

@@ -19,28 +19,46 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
     const speakSentence = (index:any) => {
       if (index < sentences.length) {
         const utterance = new SpeechSynthesisUtterance(sentences[index]);
-        utterance.pitch = 1.2;
-        utterance.rate = 0.8;
+        
+        // Function to get the best available voice
+        const getBestVoice = () => {
+          const voices = window.speechSynthesis.getVoices();
+          
+          // Try to find a natural-sounding English voice
+          const preferredVoices = [
+            'Samantha', 'Alex', 'Victoria', 'Karen', 'Moira', 'Tessa', // macOS voices
+            'Google US English', 'Microsoft Zira Desktop', 'Microsoft David Desktop', // Other systems
+          ];
+          
+          for (const voiceName of preferredVoices) {
+            const voice = voices.find(v => v.name.includes(voiceName));
+            if (voice) return voice;
+          }
+          
+          // Fallback to any English voice
+          return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
+        };
+        
+        // Set voice properties
+        const selectedVoice = getBestVoice();
+        utterance.voice = selectedVoice;
+        utterance.pitch = 1.0;   // Natural pitch
+        utterance.rate = 0.85;   // Comfortable pace
+        utterance.volume = 0.9;  // Comfortable volume
+        
         utterance.onstart = () => setShowMicrophone(false);
         utterance.onend = () => {
           // Wait 1s after the sentence finishes before advancing the sentence
-          // and (if this is the friendly final prompt) enable the Speak UI so the
-          // icon has a moment to load.
           const timeoutId = window.setTimeout(() => {
             setCurrentSentence(index + 1);
-            // When the friendly prompt finishes, make sure the Speak UI is shown.
-            // Call the prop setter for backward-compatibility and also dispatch to the store
-            // directly so this works even when other wrappers changed the prop wiring.
+            // When the friendly prompt finishes, unlock and show microphone
             if (sentences[index] === "Feel free to share about your day with me :)") {
-              // mark microphone as unlocked so UI can't be auto-enabled earlier
-              try { dispatch(setMicrophoneUnlocked(true)); } catch (e) {}
-              // wait one extra second then request the UI to show the mic (and call prop)
-              try {
-                unlockTimeoutRef.current = window.setTimeout(() => {
-                  try { setShowMicrophone(true); } catch (e) {}
-                  try { dispatch(setShowMicrophoneAction(true)); } catch (e) {}
-                }, 1000) as unknown as number;
-              } catch (e) {}
+              dispatch(setMicrophoneUnlocked(true));
+              // wait one extra second then show the mic
+              unlockTimeoutRef.current = window.setTimeout(() => {
+                setShowMicrophone(true);
+                dispatch(setShowMicrophoneAction(true));
+              }, 1000) as unknown as number;
             }
           }, 1000);
           timeoutsRef.current!.push(timeoutId as unknown as number);
