@@ -68,6 +68,7 @@ MISTRAL_MODEL = (
     or "mistral-small-latest"
 )
 MISTRAL_TIMEOUT = float(os.environ.get("MISTRAL_TIMEOUT", "30"))
+SILENCE_TIMEOUT = float(os.environ.get("SILENCE_TIMEOUT", "3.0"))  # Auto-send to Mistral after 3s silence
 MISTRAL_SYSTEM_PROMPT = os.environ.get(
     "MISTRAL_SYSTEM_PROMPT",
     """
@@ -411,82 +412,110 @@ async def handler(ws, path=None):
             pcm_path = saved_path
             last_partial = ""
             last_progress_ts = time.monotonic()
+            last_partial_ts = time.monotonic()  # Track when we last got new partial text
+            pending_text = ""  # Store the last partial text for timeout processing
 
             if handshake.simulate and recognizer is None and not handshake.chat:
                 sim_task = asyncio.create_task(simulate_loop())
 
-            async for data in ws:
-                if isinstance(data, (bytes, bytearray, memoryview)):
-                    if handshake.chat:
-                        LOG.debug(
-                            "Ignoring binary payload in chat mode for %s", conn_id
-                        )
-                        continue
-                    audio_bytes = (
-                        data if isinstance(data, (bytes, bytearray)) else bytes(data)
-                    )
+            # Create a task to periodically check for silence timeout
+            async def timeout_checker():
+                nonlocal pending_text, last_partial, last_partial_ts  # Declare nonlocal at the start
+                while True:
+                    await asyncio.sleep(0.1)  # Check every 100ms
+                    if pending_text and (time.monotonic() - last_partial_ts) >= SILENCE_TIMEOUT:
+                        LOG.info("Silence timeout (%s): Converting partial to final: %s", conn_id, pending_text)
+                        await send_json({"type": "final", "text": pending_text, "final": True})
+                        await send_assistant_reply(send_json, pending_text, handshake_mode)
+                        # Reset the variables
+                        pending_text = ""
+                        last_partial = ""
+            
+            timeout_task = asyncio.create_task(timeout_checker()) if not handshake.chat else None
 
-                    if pcm_file is not None:
-                        pcm_file.write(audio_bytes)
-
-                    bytes_received += len(audio_bytes)
-                    chunks += 1
-
-                    now = time.monotonic()
-                    if now - last_progress_ts >= PROGRESS_INTERVAL_SEC:
-                        await send_json(
-                            {
-                                "type": "progress",
-                                "bytes": bytes_received,
-                                "chunks": chunks,
-                            }
-                        )
-                        last_progress_ts = now
-
-                    if recognizer:
-                        if recognizer.AcceptWaveform(audio_bytes):
-                            try:
-                                result = json.loads(recognizer.Result())
-                            except json.JSONDecodeError:
-                                result = {}
-                            text = (result.get("text") or "").strip()
-                            if text:
-                                LOG.info("Vosk final (%s): %s", conn_id, text)
-                                await send_json(
-                                    {"type": "final", "text": text, "final": True}
-                                )
-                                last_partial = ""
-                                await send_assistant_reply(
-                                    send_json, text, handshake_mode
-                                )
-                        else:
-                            try:
-                                partial_obj = json.loads(recognizer.PartialResult())
-                            except json.JSONDecodeError:
-                                partial_obj = {}
-                            partial = (partial_obj.get("partial") or "").strip()
-                            if partial and partial != last_partial:
-                                last_partial = partial
-                                LOG.info("Vosk partial (%s): %s", conn_id, partial)
-                                await send_json({"type": "partial", "partial": partial})
-                else:
-                    try:
-                        obj = json.loads(data)
-                    except Exception:
-                        LOG.info("Received non-binary message from %s", conn_id)
-                        continue
-
-                    msg_type = obj.get("type")
-                    if msg_type in {"user_text", "chat"}:
-                        user_text = (obj.get("text") or "").strip()
-                        if not user_text:
+            try:
+                async for data in ws:
+                    if isinstance(data, (bytes, bytearray, memoryview)):
+                        if handshake.chat:
+                            LOG.debug(
+                                "Ignoring binary payload in chat mode for %s", conn_id
+                            )
                             continue
-                        LOG.info("Chat message (%s): %s", conn_id, user_text)
-                        await send_assistant_reply(
-                            send_json, user_text, handshake_mode or "chat"
+                        audio_bytes = (
+                            data if isinstance(data, (bytes, bytearray)) else bytes(data)
                         )
+
+                        if pcm_file is not None:
+                            pcm_file.write(audio_bytes)
+
+                        bytes_received += len(audio_bytes)
+                        chunks += 1
+
+                        now = time.monotonic()
+                        if now - last_progress_ts >= PROGRESS_INTERVAL_SEC:
+                            await send_json(
+                                {
+                                    "type": "progress",
+                                    "bytes": bytes_received,
+                                    "chunks": chunks,
+                                }
+                            )
+                            last_progress_ts = now
+
+                        if recognizer:
+                            if recognizer.AcceptWaveform(audio_bytes):
+                                try:
+                                    result = json.loads(recognizer.Result())
+                                except json.JSONDecodeError:
+                                    result = {}
+                                text = (result.get("text") or "").strip()
+                                if text:
+                                    LOG.info("Vosk final (%s): %s", conn_id, text)
+                                    await send_json(
+                                        {"type": "final", "text": text, "final": True}
+                                    )
+                                    last_partial = ""
+                                    await send_assistant_reply(
+                                        send_json, text, handshake_mode
+                                    )
+                            else:
+                                try:
+                                    partial_obj = json.loads(recognizer.PartialResult())
+                                except json.JSONDecodeError:
+                                    partial_obj = {}
+                                partial = (partial_obj.get("partial") or "").strip()
+                                if partial and partial != last_partial:
+                                    last_partial = partial
+                                    pending_text = partial  # Store for timeout processing
+                                    last_partial_ts = time.monotonic()  # Reset timeout timer
+                                    LOG.info("Vosk partial (%s): %s", conn_id, partial)
+                                    await send_json({"type": "partial", "partial": partial})
                     else:
-                        LOG.info("Got text message %s: %s", conn_id, obj)
+                        try:
+                            obj = json.loads(data)
+                        except Exception:
+                            LOG.info("Received non-binary message from %s", conn_id)
+                            continue
+
+                        msg_type = obj.get("type")
+                        if msg_type in {"user_text", "chat"}:
+                            user_text = (obj.get("text") or "").strip()
+                            if not user_text:
+                                continue
+                            LOG.info("Chat message (%s): %s", conn_id, user_text)
+                            await send_assistant_reply(
+                                send_json, user_text, handshake_mode or "chat"
+                            )
+                        else:
+                            LOG.info("Got text message %s: %s", conn_id, obj)
+            finally:
+                # Cancel the timeout task
+                if timeout_task:
+                    timeout_task.cancel()
+                    try:
+                        await timeout_task
+                    except asyncio.CancelledError:
+                        pass
 
     except HandshakeError as exc:
         LOG.warning("Handshake failed %s: %s", conn_id, exc)
