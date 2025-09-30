@@ -197,7 +197,7 @@ export function useStreamingASR(
           const msg = JSON.parse(ev.data as string);
           if (msg.partial) onPartial(msg.partial);
           if (msg.text && msg.final) onFinal(msg.text);
-          if (msg.type === 'assistant' && typeof msg.text === 'string') {
+          if (msg.type === 'ai_reply' && typeof msg.text === 'string') {
             onAssistant?.(msg.text, msg);
           }
         } catch (e) {

@@ -1,4 +1,4 @@
-#!/Users/workgoonja/Documents/PersonalProjects/emotional-diary/backend/.venv/bin/python3.13
+#!/Users/workgoonja/Documents/PersonalProjects/emotional_diary/emotional-diary/backend/.venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys
