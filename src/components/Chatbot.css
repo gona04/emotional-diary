@@ -33,3 +33,10 @@
 .chat-header { display:flex; justify-content:space-between; align-items:center }
 .chat-close { background: transparent; border: none; color: white; padding: 0.4rem 0.6rem; border-radius:6px }
 
+/* Mobile adjustments */
+@media (max-width: 576px) {
+  .fade-entered .chat-container, .fade-enter.fade-entered .chat-container {
+    transform: translate(0, 55vh);
+  }
+}
+
