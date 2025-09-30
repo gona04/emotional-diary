@@ -378,6 +378,8 @@ async def send_assistant_reply(send_json, user_text: str, mode: str) -> None:
     reply = await call_mistral(user_text)
     if reply:
         await send_json({"type": "assistant", "text": reply, "mode": mode})
+        # Add a small delay to ensure the response is fully processed before allowing new requests
+        await asyncio.sleep(0.5)
     else:
         await send_json(
             {
@@ -434,20 +436,43 @@ async def handler(ws, path=None):
             last_progress_ts = time.monotonic()
             last_partial_ts = time.monotonic()  # Track when we last got new partial text
             pending_text = ""  # Store the last partial text for timeout processing
+            last_ai_request = ""  # Track what we last sent to AI to prevent duplicates
+            ai_processing = False  # Track if AI is currently processing
+            last_ai_response_time = 0  # Track when we last got an AI response
+            AI_COOLDOWN_SECONDS = 2.0  # Minimum time between AI requests
 
             if handshake.simulate and recognizer is None and not handshake.chat:
                 sim_task = asyncio.create_task(simulate_loop())
 
             # Create a task to periodically check for silence timeout
             async def timeout_checker():
-                nonlocal pending_text, last_partial, last_partial_ts  # Declare nonlocal at the start
+                nonlocal pending_text, last_partial, last_partial_ts, last_ai_request, ai_processing, last_ai_response_time
                 while True:
                     await asyncio.sleep(0.1)  # Check every 100ms
-                    if pending_text and (time.monotonic() - last_partial_ts) >= SILENCE_TIMEOUT:
+                    current_time = time.monotonic()
+                    time_since_last_ai = current_time - last_ai_response_time
+                    
+                    if (pending_text and 
+                        (current_time - last_partial_ts) >= SILENCE_TIMEOUT and
+                        pending_text != last_ai_request and 
+                        not ai_processing and
+                        time_since_last_ai >= AI_COOLDOWN_SECONDS):
                         LOG.info("Silence timeout (%s): Converting partial to final: %s", conn_id, pending_text)
                         await send_json({"type": "final", "text": pending_text, "final": True})
+                        last_ai_request = pending_text  # Mark this text as sent to AI
+                        ai_processing = True
                         await send_assistant_reply(send_json, pending_text, handshake_mode)
+                        ai_processing = False
+                        last_ai_response_time = time.monotonic()  # Update last response time
                         # Reset the variables
+                        pending_text = ""
+                        last_partial = ""
+                    elif (pending_text and 
+                          (current_time - last_partial_ts) >= SILENCE_TIMEOUT and
+                          time_since_last_ai < AI_COOLDOWN_SECONDS):
+                        LOG.info("Silence timeout (%s): Skipping due to cooldown (%.1fs remaining): %s", 
+                                conn_id, AI_COOLDOWN_SECONDS - time_since_last_ai, pending_text)
+                        # Clear pending text but don't send to AI
                         pending_text = ""
                         last_partial = ""
             
@@ -489,15 +514,31 @@ async def handler(ws, path=None):
                                 except json.JSONDecodeError:
                                     result = {}
                                 text = (result.get("text") or "").strip()
-                                if text:
+                                current_time = time.monotonic()
+                                time_since_last_ai = current_time - last_ai_response_time
+                                
+                                if (text and 
+                                    text != last_ai_request and 
+                                    not ai_processing and
+                                    time_since_last_ai >= AI_COOLDOWN_SECONDS):
                                     LOG.info("Vosk final (%s): %s", conn_id, text)
                                     await send_json(
                                         {"type": "final", "text": text, "final": True}
                                     )
                                     last_partial = ""
+                                    pending_text = ""  # Clear pending since we got final result
+                                    last_ai_request = text  # Mark this text as sent to AI
+                                    ai_processing = True
                                     await send_assistant_reply(
                                         send_json, text, handshake_mode
                                     )
+                                    ai_processing = False
+                                    last_ai_response_time = time.monotonic()  # Update last response time
+                                elif text == last_ai_request:
+                                    LOG.info("Vosk final (%s): Skipping duplicate text: %s", conn_id, text)
+                                elif time_since_last_ai < AI_COOLDOWN_SECONDS:
+                                    LOG.info("Vosk final (%s): Skipping due to cooldown (%.1fs remaining): %s", 
+                                            conn_id, AI_COOLDOWN_SECONDS - time_since_last_ai, text)
                             else:
                                 try:
                                     partial_obj = json.loads(recognizer.PartialResult())
@@ -520,12 +561,25 @@ async def handler(ws, path=None):
                         msg_type = obj.get("type")
                         if msg_type in {"user_text", "chat"}:
                             user_text = (obj.get("text") or "").strip()
-                            if not user_text:
+                            current_time = time.monotonic()
+                            time_since_last_ai = current_time - last_ai_response_time
+                            
+                            if (not user_text or 
+                                user_text == last_ai_request or 
+                                ai_processing or
+                                time_since_last_ai < AI_COOLDOWN_SECONDS):
+                                if time_since_last_ai < AI_COOLDOWN_SECONDS:
+                                    LOG.info("Chat message (%s): Skipping due to cooldown (%.1fs remaining): %s", 
+                                            conn_id, AI_COOLDOWN_SECONDS - time_since_last_ai, user_text)
                                 continue
                             LOG.info("Chat message (%s): %s", conn_id, user_text)
+                            last_ai_request = user_text  # Mark this text as sent to AI
+                            ai_processing = True
                             await send_assistant_reply(
                                 send_json, user_text, handshake_mode or "chat"
                             )
+                            ai_processing = False
+                            last_ai_response_time = time.monotonic()  # Update last response time
                         else:
                             LOG.info("Got text message %s: %s", conn_id, obj)
             finally:
