@@ -10,11 +10,10 @@ Possible features helping with CBT and DBT way of therapy.
 
 ## Getting Started
 
-This project includes three processes:
+This project includes two main components:
 
-1. **React frontend** (`npm start` from the repo root)
-2. **Django API** (`python manage.py runserver` inside `backend/helpfuldiary`)
-3. **WebSocket streaming server** for speech-to-text (`python streaming_server.py` inside `backend`)
+1. **React frontend** (in `frontend/` directory)
+2. **WebSocket streaming server** for speech-to-text and AI chat (in `backend/` directory)
 
 ### Requirements
 
@@ -25,14 +24,13 @@ This project includes three processes:
 
 ### Environment variables
 
-Create a `.env` file for the frontend with:
+Create a `.env` file in the `frontend/` directory with:
 
 ```
-REACT_APP_BACKEND_URL=http://localhost:8000
 REACT_APP_STREAMING_WS_URL=ws://localhost:8765
 ```
 
-Configure the backend via environment variables (e.g. `.env` + `python-dotenv` or shell export):
+Configure the backend via environment variables (e.g. shell export or .env file):
 
 ```
 MISTRAL_API_KEY=your_mistral_key
@@ -48,16 +46,6 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate  # On Windows use .venv\Scripts\activate
 pip install -r requirements.txt
-cd helpfuldiary
-python manage.py migrate
-python manage.py runserver 0.0.0.0:8000
-```
-
-### Streaming server
-
-```bash
-cd backend
-source .venv/bin/activate
 python streaming_server.py
 ```
 
@@ -66,6 +54,7 @@ You should see logs like `server listening on 0.0.0.0:8765`. The frontend microp
 ### Frontend setup
 
 ```bash
+cd frontend
 npm install
 npm start
 ```
