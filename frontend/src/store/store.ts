@@ -3,6 +3,7 @@ import uiReducer from './uiSlice';
 import chatReducer from './chatSlice';
 import promptReducer from './promptSlice';
 import audioReducer from './audioSlice';
+import ttsReducer from './ttsSlice';
 
 // Simple logger middleware
 const logger = (storeAPI: any) => (next: any) => (action: any) => {
@@ -20,6 +21,7 @@ export const store = configureStore({
     chat: chatReducer,
     prompt: promptReducer,
     audio: audioReducer,
+    tts: ttsReducer,
   },
   middleware: (getDefaultMiddleware: any) => getDefaultMiddleware().concat(logger),
   devTools: true,

@@ -5,6 +5,7 @@ import useChatSocket from '../../hooks/useChatSocket';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addMessage } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
+import { getBestVoice } from '../../store/ttsSlice';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenChat, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
   const microphoneUnlocked = useAppSelector((s: any) => s.ui.microphoneUnlocked);
+  const { preferredVoices, pitch, rate, volume } = useAppSelector((state) => state.tts);
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const lastFinalRef = useRef<string>('');
@@ -68,31 +70,13 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
         const utterance = new SpeechSynthesisUtterance(therapistResponse);
         
         // Function to get the best available voice (same as intro)
-        const getBestVoice = () => {
-          const voices = window.speechSynthesis.getVoices();
-          
-          // Try to find a natural-sounding English voice
-          const preferredVoices = [
-            'Samantha', 'Alex', 'Victoria', 'Karen', 'Moira', 'Tessa', // macOS voices
-            'Google US English', 'Microsoft Zira Desktop', 'Microsoft David Desktop', // Other systems
-          ];
-          
-          for (const voiceName of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(voiceName));
-            if (voice) return voice;
-          }
-          
-          // Fallback to any English voice
-          return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
-        };
-        
-        const selectedVoice = getBestVoice();
+        const selectedVoice = getBestVoice(preferredVoices);
         utterance.voice = selectedVoice;
         
-        // More natural voice settings
-        utterance.pitch = 1.0;   // Natural pitch
-        utterance.rate = 0.85;   // Slightly slower for therapeutic, calming effect
-        utterance.volume = 0.9;  // Comfortable volume
+        // Voice settings from Redux
+        utterance.pitch = pitch;
+        utterance.rate = rate;
+        utterance.volume = volume;
         
         // Add slight pauses for more natural speech
         const naturalText = therapistResponse
@@ -119,7 +103,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
         console.log('[TTS] Speaking therapist response with enhanced voice');
       }, 500); // 500ms delay to ensure smooth transition
     }
-  }, [dispatch, shouldSpeakResponses, isPaused]);
+  }, [dispatch, shouldSpeakResponses, isPaused, preferredVoices, pitch, rate, volume]);
 
   useChatSocket(handleAssistant);
 

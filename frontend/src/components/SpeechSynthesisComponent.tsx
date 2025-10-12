@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setShowMicrophone as setShowMicrophoneAction, setMicrophoneUnlocked } from '../store/uiSlice';
+import { getBestVoice } from '../store/ttsSlice';
 
 interface SpeechSynthesisComponentProps {
     sentences: string[];
@@ -11,6 +12,7 @@ interface SpeechSynthesisComponentProps {
 
 const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sentences, currentSentence, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
+  const { preferredVoices, pitch, rate, volume } = useAppSelector((state) => state.tts);
   const timeoutsRef = useRef<number[]>([]);
   const unlockTimeoutRef = useRef<number | null>(null);
 
@@ -21,30 +23,11 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
         const utterance = new SpeechSynthesisUtterance(sentences[index]);
         
         // Function to get the best available voice
-        const getBestVoice = () => {
-          const voices = window.speechSynthesis.getVoices();
-          
-          // Try to find a natural-sounding English voice
-          const preferredVoices = [
-            'Samantha', 'Alex', 'Victoria', 'Karen', 'Moira', 'Tessa', // macOS voices
-            'Google US English', 'Microsoft Zira Desktop', 'Microsoft David Desktop', // Other systems
-          ];
-          
-          for (const voiceName of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(voiceName));
-            if (voice) return voice;
-          }
-          
-          // Fallback to any English voice
-          return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
-        };
-        
-        // Set voice properties
-        const selectedVoice = getBestVoice();
+        const selectedVoice = getBestVoice(preferredVoices);
         utterance.voice = selectedVoice;
-        utterance.pitch = 1.0;   // Natural pitch
-        utterance.rate = 0.85;   // Comfortable pace
-        utterance.volume = 0.9;  // Comfortable volume
+        utterance.pitch = pitch;
+        utterance.rate = rate;
+        utterance.volume = volume;
         
         utterance.onstart = () => setShowMicrophone(false);
         utterance.onend = () => {
@@ -75,7 +58,7 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
       timeoutsRef.current = [];
       window.speechSynthesis.cancel();
     };
-  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone, dispatch]);
+  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone, dispatch, preferredVoices, pitch, rate, volume]);
 
   return null;
 };
