@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addMessage } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
+import { ttsService } from '../../services/ttsService';
 
 type Props = {
   currentSentence: number;
@@ -60,44 +61,16 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
     dispatch(addMessage({ from: 'bot', text: therapistResponse }));
     
     // Speak the therapist response using text-to-speech (only if enabled and microphone is not actively listening)
-    if (therapistResponse && shouldSpeakResponses && 'speechSynthesis' in window && !isPaused) {
+    if (therapistResponse && shouldSpeakResponses && !isPaused) {
       // Add a small delay to ensure any audio processing is complete
-      setTimeout(() => {
-        // Stop any currently speaking utterances
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(therapistResponse);
-        
-        // Use the selected voice (same as intro)
-        utterance.voice = selectedVoice;
-        
-        // Voice settings from Redux
-        utterance.pitch = pitch;
-        utterance.rate = rate;
-        utterance.volume = volume;
-        
+      setTimeout(async () => {
         // Add slight pauses for more natural speech
         const naturalText = therapistResponse
           .replace(/\. /g, '... ')  // Add pauses after sentences
           .replace(/\? /g, '?.. ')  // Add pauses after questions
           .replace(/! /g, '!.. ');  // Add pauses after exclamations
         
-        utterance.text = naturalText;
-        
-        utterance.onstart = () => {
-          console.log('[TTS] Started speaking therapist response with voice:', selectedVoice?.name || 'default');
-        };
-        
-        utterance.onend = () => {
-          console.log('[TTS] Finished speaking therapist response');
-        };
-        
-        utterance.onerror = (e) => {
-          console.error('[TTS] Speech synthesis error:', e);
-        };
-        
-        // Speak the response
-        window.speechSynthesis.speak(utterance);
+        await ttsService.speak(naturalText, { voice: selectedVoice, pitch, rate, volume });
         console.log('[TTS] Speaking therapist response with enhanced voice');
       }, 500); // 500ms delay to ensure smooth transition
     }
