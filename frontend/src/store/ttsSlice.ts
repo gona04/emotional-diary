@@ -5,6 +5,7 @@ type TTSState = {
   pitch: number;
   rate: number;
   volume: number;
+  selectedVoice: SpeechSynthesisVoice | null;
 };
 
 const initialState: TTSState = {
@@ -15,6 +16,7 @@ const initialState: TTSState = {
   pitch: 1.0,   // Natural pitch
   rate: 0.85,   // Comfortable pace
   volume: 0.9,  // Comfortable volume
+  selectedVoice: null,
 };
 
 const ttsSlice = createSlice({
@@ -33,10 +35,13 @@ const ttsSlice = createSlice({
     setVolume(state: TTSState, action: PayloadAction<number>) {
       state.volume = action.payload;
     },
+    setSelectedVoice(state: TTSState, action: PayloadAction<SpeechSynthesisVoice | null>) {
+      state.selectedVoice = action.payload;
+    },
   }
 });
 
-export const { setPreferredVoices, setPitch, setRate, setVolume } = ttsSlice.actions;
+export const { setPreferredVoices, setPitch, setRate, setVolume, setSelectedVoice } = ttsSlice.actions;
 export default ttsSlice.reducer;
 
 // Utility function to get the best voice

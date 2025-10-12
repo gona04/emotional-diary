@@ -5,7 +5,6 @@ import useChatSocket from '../../hooks/useChatSocket';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { addMessage } from '../../store/chatSlice';
 import { setMicrophoneUnlocked, setShowMicrophone as setShowMicrophoneAction } from '../../store/uiSlice';
-import { getBestVoice } from '../../store/ttsSlice';
 import SpeechSynthesisComponent from '../SpeechSynthesisComponent';
 
 type Props = {
@@ -19,7 +18,7 @@ type Props = {
 const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenChat, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
   const microphoneUnlocked = useAppSelector((s: any) => s.ui.microphoneUnlocked);
-  const { preferredVoices, pitch, rate, volume } = useAppSelector((state) => state.tts);
+  const { pitch, rate, volume, selectedVoice } = useAppSelector((state) => state.tts);
   // local icon state: toggles icon between mic and pause without affecting the pulsing animation
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const lastFinalRef = useRef<string>('');
@@ -69,8 +68,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
         
         const utterance = new SpeechSynthesisUtterance(therapistResponse);
         
-        // Function to get the best available voice (same as intro)
-        const selectedVoice = getBestVoice(preferredVoices);
+        // Use the selected voice (same as intro)
         utterance.voice = selectedVoice;
         
         // Voice settings from Redux
@@ -103,7 +101,7 @@ const SpeechIntro: React.FC<Props> = ({ currentSentence, showMicrophone, onOpenC
         console.log('[TTS] Speaking therapist response with enhanced voice');
       }, 500); // 500ms delay to ensure smooth transition
     }
-  }, [dispatch, shouldSpeakResponses, isPaused, preferredVoices, pitch, rate, volume]);
+  }, [dispatch, shouldSpeakResponses, isPaused, selectedVoice, pitch, rate, volume]);
 
   useChatSocket(handleAssistant);
 

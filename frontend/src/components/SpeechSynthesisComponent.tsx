@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setShowMicrophone as setShowMicrophoneAction, setMicrophoneUnlocked } from '../store/uiSlice';
-import { getBestVoice } from '../store/ttsSlice';
+import { getBestVoice, setSelectedVoice } from '../store/ttsSlice';
 
 interface SpeechSynthesisComponentProps {
     sentences: string[];
@@ -12,9 +12,17 @@ interface SpeechSynthesisComponentProps {
 
 const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sentences, currentSentence, setCurrentSentence, setShowMicrophone }) => {
   const dispatch = useAppDispatch();
-  const { preferredVoices, pitch, rate, volume } = useAppSelector((state) => state.tts);
+  const { preferredVoices, pitch, rate, volume, selectedVoice } = useAppSelector((state) => state.tts);
   const timeoutsRef = useRef<number[]>([]);
   const unlockTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Set selectedVoice if not already set
+    if (selectedVoice === null) {
+      const voice = getBestVoice(preferredVoices);
+      dispatch(setSelectedVoice(voice));
+    }
+  }, [selectedVoice, preferredVoices, dispatch]);
 
   useEffect(() => {
 
@@ -22,8 +30,7 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
       if (index < sentences.length) {
         const utterance = new SpeechSynthesisUtterance(sentences[index]);
         
-        // Function to get the best available voice
-        const selectedVoice = getBestVoice(preferredVoices);
+        // Use the selected voice
         utterance.voice = selectedVoice;
         utterance.pitch = pitch;
         utterance.rate = rate;
@@ -58,7 +65,7 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
       timeoutsRef.current = [];
       window.speechSynthesis.cancel();
     };
-  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone, dispatch, preferredVoices, pitch, rate, volume]);
+  }, [currentSentence, sentences, setCurrentSentence, setShowMicrophone, dispatch, selectedVoice, pitch, rate, volume]);
 
   return null;
 };
