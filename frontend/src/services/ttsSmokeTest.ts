@@ -16,7 +16,7 @@ export async function runTTSSmokeTest(): Promise<boolean> {
     // Test 2: Custom options
     console.log('🎛️  Testing custom voice options...');
     await ttsService.speak('Testing custom pitch and rate settings.', {
-      pitch: -10,
+      pitch: -5,
       rate: 0.8,
       volume: 0.7
     });

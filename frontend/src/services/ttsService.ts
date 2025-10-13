@@ -24,13 +24,13 @@ export class TTSService {
       // Use provided options or defaults
       const voice = options.voice || 'en-US-EmmaNeural';
       const pitch = options.pitch !== undefined ? options.pitch : -5;
-      const rate = options.rate !== undefined ? options.rate : 1;
+      const rate = options.rate !== undefined ? options.rate : 1.2;
       const volume = options.volume !== undefined ? options.volume : 1;
 
       // Set options on the client
       ttsClient.voice = voice;
       if (pitch !== -5) ttsClient.pitch = `${pitch >= 0 ? '+' : ''}${pitch}Hz`;
-      if (rate !== 1) ttsClient.rate = `${rate >= 1 ? '+' : ''}${Math.round((rate - 1) * 100)}%`;
+      if (rate !== 1.2) ttsClient.rate = `${rate >= 1.2 ? '+' : ''}${Math.round((rate - 1.2) * 100)}%`;
       if (volume !== 1) ttsClient.volume = `${volume >= 1 ? '+' : ''}${Math.round((volume - 1) * 100)}%`;
 
       // Set text on the client

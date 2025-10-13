@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./SpeechIntro.css";
 import { useStreamingASR } from "../../hooks";
 import useChatSocket from "../../hooks/useChatSocket";
@@ -38,6 +38,8 @@ const SpeechIntro: React.FC<Props> = ({
   const lastFinalRef = useRef<string>("");
   const didInitRef = useRef<boolean>(false);
   const [micVisible, setMicVisible] = useState<boolean>(false);
+  const [displayedText, setDisplayedText] = useState<string>("");
+  const textTimeoutsRef = useRef<number[]>([]);
 
   const wsUrl = (
     process.env.REACT_APP_STREAMING_WS_URL || "ws://localhost:8765"
@@ -51,16 +53,15 @@ const SpeechIntro: React.FC<Props> = ({
     "How are you?",
     "Feel free to share about your day with me :)",
   ]; */
-  const sentences = [
-    "Hello... ",
-    "How high are you...?",
-    "ah.. ohhh.. Sorry... ",
+  const sentences = useMemo(() => [
+    "Hello.. ",
+    "How high are you ?",
+    "ohhh.. Sorry..",
     "I meant to ask",
-    "Hello.....",
-    "Hi......",
-    "How are you ? ",
-    "Feel free to share about your day with me :)"
-  ];
+    "Hello..",
+    "How are you ?",
+    "Feel free to share about your day with me"
+  ], []);
 
   // Add state to track if we should speak responses
   const [shouldSpeakResponses, setShouldSpeakResponses] = useState(true);
@@ -168,22 +169,27 @@ const SpeechIntro: React.FC<Props> = ({
   }, [showMicrophone]);
 
   useEffect(() => {
-    if (microphoneUnlocked || didInitRef.current) {
-      return;
+    // Clear any pending text display timeouts
+    textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    textTimeoutsRef.current = [];
+
+    if (currentSentence < sentences.length) {
+      // Start speaking immediately
+      // Add a delay before showing text so voice comes first (300ms delay)
+      const textTimeoutId = window.setTimeout(() => {
+        setDisplayedText(sentences[currentSentence]);
+      }, 300);
+      textTimeoutsRef.current.push(textTimeoutId);
+    } else {
+      // Clear text when done
+      setDisplayedText("");
     }
-    didInitRef.current = true;
-    // Keep the microphone hidden and locked until the intro script finishes.
-    try {
-      dispatch(setMicrophoneUnlocked(false));
-    } catch (e) {}
-    try {
-      setShowMicrophone(false);
-    } catch (e) {}
-    try {
-      dispatch(setShowMicrophoneAction(false));
-    } catch (e) {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, setShowMicrophone, microphoneUnlocked]);
+
+    return () => {
+      textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      textTimeoutsRef.current = [];
+    };
+  }, [currentSentence, sentences]);
 
   useEffect(() => {
     return () => {
@@ -191,6 +197,9 @@ const SpeechIntro: React.FC<Props> = ({
         stop();
       } catch (e) {}
       lastFinalRef.current = "";
+      // Clear text display timeouts
+      textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      textTimeoutsRef.current = [];
     };
   }, [stop]);
 
@@ -201,7 +210,7 @@ const SpeechIntro: React.FC<Props> = ({
           className={`intro-view ${micVisible ? "hidden" : "visible"}`}
           aria-hidden={showMicrophone}
         >
-          {currentSentence < sentences.length && sentences[currentSentence]}
+          {displayedText}
           <SpeechSynthesisComponent
             sentences={sentences}
             currentSentence={currentSentence}

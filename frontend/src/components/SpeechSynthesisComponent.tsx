@@ -20,12 +20,15 @@ const SpeechSynthesisComponent: React.FC<SpeechSynthesisComponentProps> = ({ sen
     const speakSentence = async (index: number) => {
       if (index < sentences.length) {
         setShowMicrophone(false);
-        await ttsService.speak(sentences[index], { voice: selectedVoice, pitch, rate, volume });
+        // Remove emojis and special characters from text before speaking
+        const cleanText = sentences[index].replace(/[^\w\s.,!?-]/g, '').trim();
+        console.log('🎤 About to call ttsService.speak for:', `"${cleanText}"`);
+        await ttsService.speak(cleanText, { voice: selectedVoice, pitch, rate, volume });
         // Wait 1s after the sentence finishes before advancing the sentence
         const timeoutId = window.setTimeout(() => {
           setCurrentSentence(index + 1);
           // When the friendly prompt finishes, unlock and show microphone
-          if (sentences[index] === "Feel free to share about your day with me :)") {
+          if (sentences[index] === "Feel free to share about your day with me") {
             dispatch(setMicrophoneUnlocked(true));
             // wait one extra second then show the mic
             unlockTimeoutRef.current = window.setTimeout(() => {
