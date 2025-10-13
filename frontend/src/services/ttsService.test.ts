@@ -14,9 +14,9 @@ global.URL.revokeObjectURL = jest.fn();
 // Mock the EdgeTTS client
 jest.mock('edge-tts-universal', () => ({
   EdgeTTS: jest.fn().mockImplementation(() => ({
-    voice: 'en-US-JennyNeural',
-    pitch: '',
-    rate: '',
+    voice: 'en-US-EmmaNeural',
+    pitch: '-5',
+    rate: '-6',
     volume: '',
     text: '',
     synthesize: jest.fn().mockResolvedValue(new ArrayBuffer(1024)),

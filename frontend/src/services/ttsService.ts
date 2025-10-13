@@ -1,6 +1,6 @@
 import { EdgeTTS } from 'edge-tts-universal';
 
-const ttsClient = new EdgeTTS('en-US-JennyNeural');
+const ttsClient = new EdgeTTS('en-US-EmmaNeural');
 
 export interface TTSOptions {
   voice?: string;
@@ -22,8 +22,8 @@ export class TTSService {
   async speak(text: string, options: TTSOptions = {}): Promise<void> {
     try {
       // Use provided options or defaults
-      const voice = options.voice || 'en-US-JennyNeural';
-      const pitch = options.pitch !== undefined ? options.pitch : -10;
+      const voice = options.voice || 'en-US-EmmaNeural';
+      const pitch = options.pitch !== undefined ? options.pitch : -5;
       const rate = options.rate !== undefined ? options.rate : 1;
       const volume = options.volume !== undefined ? options.volume : 1;
 

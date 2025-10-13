@@ -9,11 +9,11 @@ type TTSState = {
 };
 
 const initialState: TTSState = {
-  voices: ['en-US-JennyNeural'],
+  voices: ['en-US-EmmaNeural'],
   pitch: -10,   // Even lower pitch for therapy
   rate: 0.85,   // Comfortable pace
   volume: 0.9,  // Comfortable volume
-  selectedVoice: 'en-US-JennyNeural',
+  selectedVoice: 'en-US-EmmaNeural',
 };
 
 const ttsSlice = createSlice({
