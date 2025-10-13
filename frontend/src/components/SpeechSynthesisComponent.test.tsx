@@ -14,8 +14,8 @@ class MockSpeechSynthesisUtterance {
   text: string;
   onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
-  pitch = 1;
-  rate = 1;
+  pitch = -10;
+  rate = -20;
 
   constructor(text: string) {
     this.text = text;
