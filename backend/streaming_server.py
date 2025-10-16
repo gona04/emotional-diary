@@ -88,30 +88,36 @@ def _pcm_sink(conn_id):
 
 import aiohttp
 
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"  # Update if needed
+MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"  # For joke generation
+MISTRAL_AGENT_URL = "https://api.mistral.ai/v1/agents/completions"  # For conversation
 MISTRAL_API_KEY = "p9EhA0yBPa3BM6VJ6UCkeZiUVohyCNqQ"  # Replace with your real key or load from env
+MISTRAL_AGENT_ID = "ag:8a6aaa36:20251016:cbt-diagnoses:58312ab4"  # Your CBT diagnoses agent
 
 async def send_assistant_reply(send_json, text, mode):
+    """Send user message to Mistral agent and get response"""
     headers = {
         "Authorization": f"Bearer {MISTRAL_API_KEY}",
         "Content-Type": "application/json",
     }
     data = {
-        "model": "mistral-tiny",  # Or your preferred model
+        "agent_id": MISTRAL_AGENT_ID,
         "messages": [
             {"role": "user", "content": text}
-        ],
-        "temperature": 0.7
+        ]
     }
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(MISTRAL_API_URL, headers=headers, json=data, timeout=30) as resp:
+            async with session.post(MISTRAL_AGENT_URL, headers=headers, json=data, timeout=30) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     ai_text = result["choices"][0]["message"]["content"]
+                    LOG.info(f"Agent response: {ai_text}")
                 else:
+                    error_text = await resp.text()
+                    LOG.error(f"Agent API error {resp.status}: {error_text}")
                     ai_text = f"[AI error: {resp.status}]"
     except Exception as e:
+        LOG.error(f"Agent request exception: {e}")
         ai_text = f"[AI error: {e}]"
     LOG.info(f"Sending AI reply: {ai_text}")
     await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
@@ -292,6 +298,12 @@ async def handler(ws, path=None):
     ai_processing = False
     last_ai_response_time = 0.0
     AI_COOLDOWN_SECONDS = 2.0
+    
+    # Debounce mechanism for API calls
+    accumulated_text = ""
+    last_speech_time = 0.0
+    debounce_task: Optional[asyncio.Task] = None
+    SILENCE_THRESHOLD = 5.0  # Wait 5 seconds of silence before sending to API
 
     # --- Helper functions must be defined here, inside handler, to access state ---
     async def send_json(obj) -> bool:
@@ -301,6 +313,30 @@ async def handler(ws, path=None):
         except Exception:
             LOG.exception("Failed sending json to %s", conn_id)
             return False
+
+    async def debounced_api_call():
+        """Wait for 5 seconds of silence, then send accumulated text to API"""
+        nonlocal accumulated_text, ai_processing, last_ai_request, last_ai_response_time, debounce_task
+        try:
+            await asyncio.sleep(SILENCE_THRESHOLD)
+            # After 5 seconds of silence, send the accumulated text
+            if accumulated_text and not ai_processing:
+                text_to_send = accumulated_text.strip()
+                if text_to_send and text_to_send != last_ai_request:
+                    LOG.info("⏱️ Debounced API call (%s): Sending after 5s silence: %s", conn_id, text_to_send)
+                    await send_json({"type": "final", "text": text_to_send, "final": True})
+                    last_ai_request = text_to_send
+                    ai_processing = True
+                    await send_assistant_reply(send_json, text_to_send, handshake_mode)
+                    ai_processing = False
+                    last_ai_response_time = time.monotonic()
+                    accumulated_text = ""  # Clear after sending
+        except asyncio.CancelledError:
+            LOG.debug("Debounce timer cancelled for %s", conn_id)
+        except Exception as e:
+            LOG.exception("Error in debounced_api_call for %s: %s", conn_id, e)
+        finally:
+            debounce_task = None
 
     async def simulate_loop():
         count = 0
@@ -401,22 +437,22 @@ async def handler(ws, path=None):
                                 except Exception:
                                     result = {}
                                 text = (result.get("text") or "").strip()
-                                current_time = time.monotonic()
-                                time_since_last_ai = current_time - last_ai_response_time
-                                if (text and text != last_ai_request and not ai_processing and time_since_last_ai >= AI_COOLDOWN_SECONDS):
+                                if text:
                                     LOG.info("Vosk final (%s): %s", conn_id, text)
-                                    await send_json({"type": "final", "text": text, "final": True})
+                                    # Accumulate text instead of sending immediately
+                                    if accumulated_text:
+                                        accumulated_text += " " + text
+                                    else:
+                                        accumulated_text = text
+                                    last_speech_time = time.monotonic()
+                                    
+                                    # Cancel existing debounce timer and start a new one
+                                    if debounce_task and not debounce_task.done():
+                                        debounce_task.cancel()
+                                    debounce_task = asyncio.create_task(debounced_api_call())
+                                    
                                     last_partial = ""
                                     pending_text = ""
-                                    last_ai_request = text
-                                    ai_processing = True
-                                    await send_assistant_reply(send_json, text, handshake_mode)
-                                    ai_processing = False
-                                    last_ai_response_time = time.monotonic()
-                                elif text == last_ai_request:
-                                    LOG.info("Vosk final (%s): Skipping duplicate text: %s", conn_id, text)
-                                elif time_since_last_ai < AI_COOLDOWN_SECONDS:
-                                    LOG.info("Vosk final (%s): Skipping due to cooldown (%.1fs remaining): %s", conn_id, AI_COOLDOWN_SECONDS - time_since_last_ai, text)
                             else:
                                 try:
                                     partial_obj = json.loads(recognizer.PartialResult())
@@ -456,6 +492,14 @@ async def handler(ws, path=None):
                         else:
                             LOG.info("Got text message %s: %s", conn_id, obj)
             finally:
+                # Cancel debounce task if running
+                if debounce_task and not debounce_task.done():
+                    debounce_task.cancel()
+                    try:
+                        await debounce_task
+                    except asyncio.CancelledError:
+                        pass
+                        
                 if timeout_task:
                     timeout_task.cancel()
                     try:

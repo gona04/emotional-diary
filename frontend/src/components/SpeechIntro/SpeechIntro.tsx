@@ -235,7 +235,7 @@ const SpeechIntro: React.FC<Props> = ({
             volume,
           });
           console.log("[TTS] Speaking therapist response with enhanced voice");
-        }, 500); // 500ms delay to ensure smooth transition
+        }, 50); // 500ms delay to ensure smooth transition
       }
     },
     [
