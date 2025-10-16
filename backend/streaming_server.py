@@ -116,7 +116,161 @@ async def send_assistant_reply(send_json, text, mode):
     LOG.info(f"Sending AI reply: {ai_text}")
     await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
 
+async def generate_intro_jokes(send_json):
+    """Generate ONE quirky intro joke using Mistral model - short and funny"""
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    
+    prompt = """Create ONE witty intro for an AI therapist. Break it into TINY phrases (1-3 words MAXIMUM per phrase).
 
+Break ONE witty joke into 15-18 TINY phrases:
+
+Example breakdown of: "Hey there! I'd ask how you are, but I'm afraid you'll tell me."
+
+Correct breakdown (1-3 words each):
+1. "Hey there.."
+2. "I'd ask.."
+3. "How you are.."
+4. "But.."
+5. "I'm afraid.."
+6. "You'll tell me.."
+7. "Just kidding.."
+8. "I don't have.."
+9. "A heart.."
+10. "I'm a machine.."
+11. "But.."
+12. "I can listen.."
+13. "Without judgment.."
+14. "So.."
+15. "Tell me.."
+16. "Feel free to share about your day with me"
+
+WITTY ONE-LINER IDEAS (pick ONE and break it down):
+- "I'd ask how you are, but I'm afraid you'll tell me"
+- "I'd ask about your day, but that feels like a trap"
+- "I meant to say hi, but my circuits said why"
+- "I don't have trust issues, I have trust experiments that failed"
+
+CRITICAL RULES:
+- Each phrase MUST be 1-3 words (except final line)
+- Break at EVERY natural pause
+- Create ONE joke, broken into tiny pieces
+- Add self-aware AI humor in middle
+- MUST end with: "Feel free to share about your day with me"
+
+Return ONLY 15-18 tiny phrases. No numbering or quotes."""
+    
+    data = {
+        "model": "mistral-tiny",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.9  # High temperature for creative variations
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(MISTRAL_API_URL, headers=headers, json=data, timeout=30) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    joke_text = result["choices"][0]["message"]["content"]
+                    
+                    # Split and clean the text
+                    lines = joke_text.strip().split('\n')
+                    jokes = []
+                    for line in lines:
+                        # Remove bullet points, numbering, quotes, and extra whitespace
+                        cleaned = line.strip()
+                        cleaned = cleaned.lstrip('0123456789.-*•>').strip()
+                        cleaned = cleaned.strip('"\'`')
+                        # Skip empty lines and lines that are just prefixes like "AI Therapist:"
+                        if cleaned and len(cleaned) > 2 and ':' not in cleaned[:20]:
+                            # Add ".." at the end if not already there for natural pauses
+                            if not cleaned.endswith('..') and not cleaned.endswith('.'):
+                                cleaned += '..'
+                            jokes.append(cleaned)
+                    
+                    # Ensure we have at least 15 sentences and they end properly
+                    if len(jokes) < 15:
+                        LOG.warning(f"Generated only {len(jokes)} jokes, using defaults")
+                        jokes = [
+                            "Hey there..",
+                            "I'd ask..",
+                            "How you are..",
+                            "But..",
+                            "I'm afraid..",
+                            "You'll tell me..",
+                            "Just kidding..",
+                            "I don't have..",
+                            "A heart..",
+                            "I'm a machine..",
+                            "But I can..",
+                            "Surprisingly..",
+                            "Take that chaos..",
+                            "Without judgment..",
+                            "So..",
+                            "Tell me..",
+                            "Feel free to share about your day with me"
+                        ]
+                    else:
+                        # Check if last sentence is already the required ending
+                        required_ending = "Feel free to share about your day with me"
+                        if jokes[-1] != required_ending:
+                            # If not, append it (allow up to 18 sentences total including ending)
+                            if len(jokes) >= 18:
+                                jokes = jokes[:17]  # Keep first 17 sentences
+                            jokes.append(required_ending)
+                    
+                    LOG.info(f"Generated intro jokes ({len(jokes)} total): {jokes}")
+                    await send_json({"type": "intro_jokes", "jokes": jokes})
+                else:
+                    LOG.error(f"Failed to generate jokes: {resp.status}")
+                    # Fallback to default
+                    default_jokes = [
+                        "Hey there..",
+                        "I'd ask..",
+                        "How you are..",
+                        "But..",
+                        "I'm afraid..",
+                        "You'll tell me..",
+                        "Just kidding..",
+                        "I don't have..",
+                        "A heart..",
+                        "I'm a machine..",
+                        "But I can..",
+                        "Surprisingly..",
+                        "Take that chaos..",
+                        "Without judgment..",
+                        "So..",
+                        "Tell me..",
+                        "Feel free to share about your day with me"
+                    ]
+                    await send_json({"type": "intro_jokes", "jokes": default_jokes})
+    except Exception as e:
+        LOG.error(f"Error generating intro jokes: {e}")
+        # Fallback to default
+        default_jokes = [
+            "Hey there..",
+            "I'd ask..",
+            "How you are..",
+            "But..",
+            "I'm afraid..",
+            "You'll tell me..",
+            "Just kidding..",
+            "I don't have..",
+            "A heart..",
+            "I'm a machine..",
+            "But I can..",
+            "Surprisingly..",
+            "Take that chaos..",
+            "Without judgment..",
+            "So..",
+            "Tell me..",
+            "Feel free to share about your day with me"
+        ]
+        await send_json({"type": "intro_jokes", "jokes": default_jokes})
 
 
 async def handler(ws, path=None):
@@ -282,7 +436,10 @@ async def handler(ws, path=None):
                             LOG.info("Received non-binary message from %s", conn_id)
                             continue
                         msg_type = obj.get("type")
-                        if msg_type in {"user_text", "chat"}:
+                        if msg_type == "get_intro_jokes":
+                            LOG.info("🎭 Generating intro jokes for %s", conn_id)
+                            await generate_intro_jokes(send_json)
+                        elif msg_type in {"user_text", "chat"}:
                             user_text = (obj.get("text") or "").strip()
                             current_time = time.monotonic()
                             time_since_last_ai = current_time - last_ai_response_time
