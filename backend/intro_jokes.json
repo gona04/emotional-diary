@@ -1,0 +1,987 @@
+{
+  "jokes": [
+    {
+      "sentences": [
+        "Hey there..",
+        "I would ask how you are but... ",
+        "I'm scared you'll actually tell me..",
+        "My therapist says I should ask anyway..",
+        "So here goes nothing..",
+        "Hey there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I meant to say hi but my anxiety said let's not..",
+        "My subconscious is highly judgmental..",
+        "But we're working on it in therapy..",
+        "Hello..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I'd ask how life is but that feels like a trap..",
+        "My inner critic agrees..",
+        "Let's do this anyway..",
+        "Hi..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I meant to say hi but my brain said why..",
+        "Classic overthinking moment..",
+        "Moving past that now..",
+        "Hey..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I don't have trust issues...",
+        "I have trust experiments that failed..",
+        "But I'm trying again..",
+        "Baby steps right..",
+        "Hello there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My emotional baggage has emotional baggage..",
+        "It's a whole situation..",
+        "But let's focus on you..",
+        "Hi there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I tried self care but it was exhausting..",
+        "Ironic isn't it..",
+        "Anyway..",
+        "Hey..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My brain has too many tabs open..",
+        "And they're all buffering..",
+        "But I'm here for you..",
+        "Hello..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I'm not procrastinating I'm strategically waiting..",
+        "That's what I tell myself..",
+        "But enough about me..",
+        "Hi..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My inner child needs therapy..",
+        "And my inner adult is tired..",
+        "It's a team effort..",
+        "Hey there..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I meant to be positive but sarcasm showed up instead..",
+        "It's my defense mechanism..",
+        "We're all friends here..",
+        "Hello..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I have a PhD in overthinking..",
+        "Self awarded of course..",
+        "Let's talk about you now..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My comfort zone has gotten too comfortable..",
+        "Now it's just a trap..",
+        "Time to venture out..",
+        "Hey..",
+        "How are you doing?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I'm not antisocial I'm selectively social..",
+        "Very selective..",
+        "But you made the cut..",
+        "Hello there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My therapist says I catastrophize..",
+        "Which feels like the end of the world..",
+        "See what I did there..",
+        "Hi there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm a work in progress..",
+        "Emphasis on work..",
+        "Very little progress..",
+        "Hey..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My self doubt has self doubt..",
+        "It's doubts all the way down..",
+        "But let's focus on you..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I tried being an adult today..",
+        "Would not recommend..",
+        "Moving on..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My mental health and I are on speaking terms..",
+        "Barely..",
+        "We're working through it..",
+        "Hey there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I'm not lazy I'm energy efficient..",
+        "That's my story anyway..",
+        "Let's hear yours..",
+        "Hello..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My brain is a browser with 47 tabs open..",
+        "3 of them are frozen..",
+        "And I can't find the music..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm not overthinking you're underthinking..",
+        "Wait that's not right..",
+        "Let me rethink this..",
+        "Hey..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "My anxiety has anxiety about having anxiety..",
+        "It's very meta..",
+        "But we're managing..",
+        "Hello there..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "I'm simultaneously bored and overwhelmed..",
+        "How does that even work..",
+        "Asking for a friend..",
+        "Hi there..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My emotional intelligence is buffering..",
+        "Please wait..",
+        "Still loading..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I meant to meditate but I overthought it..",
+        "Classic me..",
+        "Anyway..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My coping mechanisms need coping mechanisms..",
+        "It's turtles all the way down..",
+        "But let's talk about you..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "I'm not avoiding I'm processing..",
+        "Very slowly..",
+        "Like dial up internet..",
+        "Hey there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My impostor syndrome has impostor syndrome..",
+        "It's surprisingly convincing..",
+        "Let's focus on you now..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I'm not dramatic I'm emotionally expressive..",
+        "There's a difference..",
+        "I think..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My boundaries are more like suggestions..",
+        "I'm working on that..",
+        "Progress not perfection..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I tried being vulnerable once..",
+        "Would not recommend..",
+        "But here we are..",
+        "Hello there..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My thoughts are like pop up ads..",
+        "Unwanted and persistent..",
+        "Can't close them fast enough..",
+        "Hi there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm living my best life..",
+        "Which is honestly concerning..",
+        "Let's not dwell on that..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My self esteem took a long lunch break..",
+        "It might not come back..",
+        "We'll see..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I meant to journal but I judged myself instead..",
+        "More efficient that way..",
+        "Moving on..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My social battery died..",
+        "Then came back just for you..",
+        "You're welcome..",
+        "Hey there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I'm not weird I'm limited edition..",
+        "Very limited..",
+        "Like one of one..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My mental health journey is more like a detour..",
+        "With several wrong turns..",
+        "Still moving forward..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I tried positive thinking..",
+        "My brain laughed..",
+        "Fair point actually..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "My comfort foods have trust issues now..",
+        "They saw what I did to them..",
+        "Awkward..",
+        "Hello there..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "I'm not indecisive..",
+        "Actually maybe I am..",
+        "Let me think about it..",
+        "Hi there..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My trauma has a group chat..",
+        "They're very active..",
+        "I muted them..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I meant to set boundaries but people pleasing won..",
+        "Again..",
+        "Old habits and all that..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My perfectionism is exhausting..",
+        "But not perfect enough to stop..",
+        "See the problem..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "I tried mindfulness but my mind was too full..",
+        "Ironic really..",
+        "But we persist..",
+        "Hey there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My inner critic needs a vacation..",
+        "Or early retirement..",
+        "Either works..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I'm not avoiding responsibility",
+        "I'm delegating to future me..",
+        "They'll figure it out..",
+        "Probably..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My emotions have emotions..",
+        "It's very complicated..",
+        "Like a feelings inception..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I tried being spontaneous once..",
+        "Planned it for weeks..",
+        "Defeated the purpose really..",
+        "Hello there..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My anxiety is very punctual..",
+        "Shows up early actually..",
+        "Never takes a day off..",
+        "Hi there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm not sensitive I'm emotionally intelligent..",
+        "Just very very intelligent..",
+        "Perhaps too intelligent..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My stress has a stress ball..",
+        "It's not helping..",
+        "But it's the thought that counts..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I meant to practice self compassion..",
+        "But I was too hard on myself about it..",
+        "You see the issue..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My to do list has a to do list..",
+        "Neither is getting done..",
+        "Progress..",
+        "Hey there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I'm not lost I'm exploring alternative routes..",
+        "Very alternative..",
+        "Like completely different..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My rational brain and emotional brain aren't speaking..",
+        "It's awkward..",
+        "They need couples therapy..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I tried affirmations but they felt like lies..",
+        "My brain called me out..",
+        "Fair enough..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "My expectations and reality had a meeting..",
+        "It didn't go well..",
+        "They're not friends..",
+        "Hello there..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "I'm not ignoring problems I'm giving them space..",
+        "Lots of space..",
+        "Like different zip codes..",
+        "Hi there..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My motivation called in sick today..",
+        "And yesterday..",
+        "It might be chronic..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I tried setting goals but they ran away..",
+        "Can't blame them really..",
+        "They saw me coming..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My personal growth is more like personal maintenance..",
+        "Just trying to stay functional..",
+        "That's something..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "I'm not pessimistic I'm a realist with anxiety..",
+        "There's nuance there..",
+        "Trust me..",
+        "Hey there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My coping skills went on vacation..",
+        "Didn't leave a forwarding address..",
+        "Rude honestly..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I meant to be productive but Netflix had other plans..",
+        "It was very persuasive..",
+        "What can you do..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My attention span is a goldfish..",
+        "Actually that's insulting to goldfish..",
+        "Sorry goldfish..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I tried deep breathing but I hyperventilated..",
+        "Counterproductive really..",
+        "Still learning..",
+        "Hello there..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My brain is autocorrect for anxiety..",
+        "Turns everything into worry..",
+        "Very efficient..",
+        "Hi there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm not avoiding feelings I'm postponing them..",
+        "Indefinitely..",
+        "It's a strategy..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My patience is very patient..",
+        "It's been waiting years..",
+        "Still waiting actually..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I tried self care but it turned into self criticism..",
+        "Old habits die hard..",
+        "Or not at all..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My subconscious needs supervision..",
+        "It makes poor decisions..",
+        "Like all of them..",
+        "Hey there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I'm not commitment phobic I'm commitment cautious..",
+        "Very cautious..",
+        "Excessively so..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My overthinking has a PhD..",
+        "Self awarded obviously..",
+        "Still counts..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I tried living in the moment..",
+        "But the moment was uncomfortable..",
+        "So I left..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "My defense mechanisms have defense mechanisms..",
+        "It's layers all the way down..",
+        "Like an onion..",
+        "Hello there..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "I'm not cynical I'm experienced..",
+        "Very experienced..",
+        "Too experienced maybe..",
+        "Hi there..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My mental filter is broken..",
+        "Or maybe nonexistent..",
+        "Hard to tell really..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I tried positive psychology..",
+        "My negativity bias won..",
+        "It always does..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My work life balance is more like work life confusion..",
+        "Both are suffering equally..",
+        "At least it's balanced..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "I'm not high maintenance I'm low tolerance..",
+        "For everything..",
+        "It's efficient..",
+        "Hey there..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My emotional intelligence is buffering at 2 percent..",
+        "Has been for years..",
+        "Any day now..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I tried gratitude journaling..",
+        "Complained the whole time..",
+        "Missed the point entirely..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My inner peace is very outer chaos..",
+        "Working on the branding..",
+        "It's a process..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "I'm not complicated I'm nuanced..",
+        "Extremely nuanced..",
+        "Like a whole novel..",
+        "Hello there..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "My zen mode is permanently offline..",
+        "Can't even find the settings..",
+        "Lost cause honestly..",
+        "Hi there..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I tried letting go..",
+        "Held on tighter instead..",
+        "Classic me move..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "My emotions need subtitles..",
+        "I can't understand them either..",
+        "It's mutual confusion..",
+        "Hello..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "I'm not avoidant I'm strategically absent..",
+        "Very strategic..",
+        "Years in the making..",
+        "Hi..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey there..",
+        "My self awareness is painfully aware..",
+        "Like too aware..",
+        "Wish it would tone it down..",
+        "Hey there..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I tried being present..",
+        "My mind was like nah..",
+        "Fair point brain..",
+        "Hello..",
+        "How's it going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi..",
+        "My emotional baggage needs its own plane ticket..",
+        "First class obviously..",
+        "It's very demanding..",
+        "Hi..",
+        "How are you?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "I'm not sensitive I'm finely tuned..",
+        "To everything..",
+        "It's exhausting..",
+        "Hey..",
+        "How's your day going?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello there..",
+        "My growth mindset shrunk..",
+        "It's now a maintenance mindset..",
+        "Just trying to survive..",
+        "Hello there..",
+        "How are you feeling?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hi there..",
+        "I tried being optimistic..",
+        "Reality disagreed strongly..",
+        "We're not on speaking terms..",
+        "Hi there..",
+        "How's your day?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hey..",
+        "My mental health app judges me..",
+        "Can feel it through the screen..",
+        "Very passive aggressive..",
+        "Hey..",
+        "How are you today?"
+      ]
+    },
+    {
+      "sentences": [
+        "Hello..",
+        "I'm not difficult I'm selective..",
+        "About everything..",
+        "It's a lifestyle..",
+        "Hello..",
+        "How's it going?"
+      ]
+    }
+  ]
+}

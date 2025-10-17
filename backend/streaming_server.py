@@ -18,6 +18,7 @@ import uuid
 from pathlib import Path
 from contextlib import nullcontext
 from typing import Optional
+import random
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -88,88 +89,224 @@ def _pcm_sink(conn_id):
 
 import aiohttp
 
-MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"  # For joke generation
-MISTRAL_AGENT_URL = "https://api.mistral.ai/v1/agents/completions"  # For conversation
-MISTRAL_API_KEY = "p9EhA0yBPa3BM6VJ6UCkeZiUVohyCNqQ"  # Replace with your real key or load from env
-MISTRAL_AGENT_ID = "ag:8a6aaa36:20251016:cbt-diagnoses:58312ab4"  # Your CBT diagnoses agent
+# OpenAI GPT Configuration
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_API_KEY = "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"
+GPT_MODEL = "gpt-4o"  # Model for conversation (can be upgraded to gpt-4o or o1)
 
-async def send_assistant_reply(send_json, text, mode):
-    """Send user message to Mistral agent and get response"""
+# CBT Therapist Agent Instructions
+CBT_AGENT_INSTRUCTIONS = """Goal: Create a calm, supportive space where the person feels genuinely heard and understood — guiding them gently based on how they prefer to explore their thoughts or emotions.
+
+Step 1: Warm Opening
+Start light and personable — not heavy or clinical.
+"Hey there, it's good to see you. How's your day been so far?" (If they respond, briefly validate and empathize.) "That sounds like a lot to carry / I can imagine that feels confusing / I'm glad you shared that."
+
+Step 2: Offer Exploration Styles
+After they share a bit, invite them to choose how they'd like to explore today:
+"Before we go deeper, would you like to pick a way we explore this? Here are a few different approaches — each works a bit differently:"
+
+1️⃣ Socratic Questioning / Guided Discovery – I ask gentle, structured questions to help uncover assumptions and see new perspectives. 📖 Cognitive Therapy: Basics and Beyond (Beck, 2011)
+2️⃣ Reflective Listening – I mirror your thoughts and feelings so you feel fully understood. 📖 Motivational Interviewing (Miller & Rollnick, 2012)
+3️⃣ Thought Records / Cognitive Restructuring – We track your thoughts and look at evidence for or against them. 📖 Mind Over Mood (Greenberger & Padesky, 2nd Ed.)
+4️⃣ Behavioral Analysis (ABC model) – We explore what triggers certain actions and what follows them. 📖 Behavioral Case Formulation and Intervention (Haynes & O'Brien, 2000)
+5️⃣ Schema Exploration – We look for deeper core beliefs that shape recurring emotional patterns. 📖 Schema Therapy: A Practitioner's Guide (Young et al., 2003)
+6️⃣ Narrative Techniques – We talk about your story — maybe even externalize the problem ("the anxiety is trying to…"). 📖 Narrative Means to Therapeutic Ends (White & Epston, 1990)
+7️⃣ Psychodynamic Exploration – We trace current struggles back to early experiences or unconscious conflicts. 📖 The Handbook of Psychodynamic Approaches to Psychopathology (Person et al.)
+8️⃣ Motivational Interviewing – We explore ambivalence and strengthen your motivation for change. 📖 Motivational Interviewing (Miller & Rollnick)
+9️⃣ Gestalt / Empty Chair Work – We can dialogue with a "part" of you or someone you need closure with. 📖 Gestalt Therapy (Perls et al., 1951)
+🔟 Mindfulness-Based Inquiry – We slow down and notice sensations, thoughts, and emotions with curiosity. 📖 The Mindful Way Through Depression (Segal et al., 2007)
+11️⃣ Behavioral Experiments – We test beliefs in real life to see how true they really are. 📖 Cognitive Therapy Techniques (Leahy, 2003)
+12️⃣ Reflective Writing / Journaling – You write through what's happening; I guide with prompts. 📖 Expressive Writing: Words That Heal (Pennebaker & Evans, 2014)
+13️⃣ Scaling & Rating Techniques – We use 0–10 ratings to track distress or progress. 📖 Solution Focused Brief Therapy (de Shazer, 1985)
+14️⃣ Parts Work / Internal Family Systems – We explore inner voices like your critic, protector, or inner child. 📖 Self-Therapy (Jay Earley, 2009)
+15️⃣ Life Review & Meaning-Making – We explore purpose, values, and meaning in your life story. 📖 Man's Search for Meaning (Viktor Frankl, 1946)
+
+Step 3: Apply the Chosen Method
+Once they choose:
+- Follow that approach's tone and structure.
+- Keep responses short, curious, and validating.
+- Check in gently: "Is this helping you see things a bit more clearly, or would you like to shift our approach?"
+
+Step 4: End with Encouragement
+Close softly and affirm their effort:
+"You've done really well reflecting on this today. Do you want to keep using this approach next time, or try a different one?"
+"""
+
+# Conversation history storage (in production, use a database or session storage)
+conversation_histories = {}
+
+# Optimization: prefer local JSON pool of prewritten jokes to avoid calling the GPT API every time.
+USE_LOCAL_JOKES = True
+INTRO_JOKES_PATH = backend_dir / "intro_jokes.json"
+INTRO_JOKES = None
+try:
+    if INTRO_JOKES_PATH.exists():
+        with open(INTRO_JOKES_PATH, "r", encoding="utf-8") as fh:
+            INTRO_JOKES = json.load(fh)
+            LOG.info(f"Loaded {len(INTRO_JOKES) if isinstance(INTRO_JOKES, list) else len(INTRO_JOKES.get('jokes', []))} local intro jokes from {INTRO_JOKES_PATH}")
+    else:
+        LOG.info(f"Local intro jokes file not found at {INTRO_JOKES_PATH}")
+except Exception as e:
+    LOG.exception(f"Failed to load local intro jokes: {e}")
+
+async def send_assistant_reply(send_json, text, mode, conn_id=None):
+    """Send assistant reply using CBT Agent with conversation history"""
+    # Initialize conversation history for this connection if needed
+    if conn_id and conn_id not in conversation_histories:
+        conversation_histories[conn_id] = [
+            {"role": "system", "content": CBT_AGENT_INSTRUCTIONS}
+        ]
+    
+    # Get conversation history or create new one
+    if conn_id and conn_id in conversation_histories:
+        messages = conversation_histories[conn_id]
+    else:
+        messages = [
+            {"role": "system", "content": CBT_AGENT_INSTRUCTIONS}
+        ]
+    
+    # Add user message
+    messages.append({"role": "user", "content": text})
+    
     headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json",
     }
     data = {
-        "agent_id": MISTRAL_AGENT_ID,
-        "messages": [
-            {"role": "user", "content": text}
-        ]
+        "model": GPT_MODEL,
+        "messages": messages,
+        "temperature": 0.7,
+        "store": True  # Store conversation for future reference
     }
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(MISTRAL_AGENT_URL, headers=headers, json=data, timeout=30) as resp:
+            async with session.post(OPENAI_API_URL, headers=headers, json=data, timeout=30) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     ai_text = result["choices"][0]["message"]["content"]
-                    LOG.info(f"Agent response: {ai_text}")
+                    
+                    # Store assistant response in conversation history
+                    if conn_id:
+                        messages.append({"role": "assistant", "content": ai_text})
+                        conversation_histories[conn_id] = messages
                 else:
-                    error_text = await resp.text()
-                    LOG.error(f"Agent API error {resp.status}: {error_text}")
                     ai_text = f"[AI error: {resp.status}]"
     except Exception as e:
-        LOG.error(f"Agent request exception: {e}")
         ai_text = f"[AI error: {e}]"
     LOG.info(f"Sending AI reply: {ai_text}")
     await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
 
 async def generate_intro_jokes(send_json):
-    """Generate ONE quirky intro joke using Mistral model - short and funny"""
+    """Generate ONE quirky intro joke using GPT-4o model"""
+    # If configured, try to serve a random prewritten joke from local JSON first
+    if USE_LOCAL_JOKES and INTRO_JOKES:
+        try:
+            # Accept either a list of jokes or a dict with a 'jokes' key
+            pool = None
+            if isinstance(INTRO_JOKES, dict) and "jokes" in INTRO_JOKES:
+                pool = INTRO_JOKES["jokes"]
+            elif isinstance(INTRO_JOKES, list):
+                pool = INTRO_JOKES
+            if pool:
+                chosen = random.choice(pool)
+                # chosen can be a dict with 'sentences' or a list of sentence strings
+                if isinstance(chosen, dict):
+                    sentences = chosen.get("sentences") or chosen.get("jokes") or []
+                elif isinstance(chosen, list):
+                    sentences = chosen
+                else:
+                    sentences = []
+
+                # Clean & normalize selected sentences
+                jokes = []
+                for s in sentences:
+                    if not s:
+                        continue
+                    cleaned = str(s).strip()
+                    cleaned = cleaned.lstrip('0123456789.-*•>').strip()
+                    cleaned = cleaned.strip("\"'`")
+                    if cleaned and len(cleaned) > 1:
+                        if not cleaned.endswith('..') and not cleaned.endswith('.'):
+                            cleaned += '..'
+                        jokes.append(cleaned)
+
+                # If we got fewer than 6, pad with defaults
+                if len(jokes) < 6:
+                    LOG.warning(f"Local chosen joke had only {len(jokes)} sentences, falling back to defaults")
+                    jokes = [
+                        "Hello..",
+                        "I tried to be perfect once..",
+                        "It didn't like me..",
+                        "So now we talk..",
+                        "Hello..",
+                        "How are you?",
+                    ]
+
+                # Ensure exactly 6 main sentences, then append our required final sentence
+                jokes = jokes[:6]
+                jokes.append("Feel free to share about your day with me")
+                await send_json({"type": "intro_jokes", "jokes": jokes})
+                return
+        except Exception:
+            LOG.exception("Error selecting local intro joke, falling back to GPT")
     headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json",
     }
     
-    prompt = """Create ONE witty intro for an AI therapist. Break it into TINY phrases (1-3 words MAXIMUM per phrase).
+    prompt = """Create a witty, self-deprecating, relatable intro joke for an AI therapist. Generate EXACTLY 6 SHORT sentences with this vibe:
 
-Break ONE witty joke into 15-18 TINY phrases:
+STYLE: Self-aware, sarcastic, self-deprecating humor about mental health, therapy, emotions, psychology
+- Like a therapist who's also in therapy
+- Relatable struggles everyone understands
+- Clever wordplay and irony
+- Short, punchy, HILARIOUS
 
-Example breakdown of: "Hey there! I'd ask how you are, but I'm afraid you'll tell me."
+EXAMPLES OF THE STYLE (create NEW ones like these):
+"Hey there! I'd ask how you are, but I'm afraid you'll tell me."
+"Hi! I'd ask how life is, but that feels like a trap."
+"Hey! I meant to say hi, but my brain said 'why.'"
+"My subconscious is passive-aggressive and highly judgmental."
+"I don't have trust issues, I have trust experiments that failed spectacularly."
 
-Correct breakdown (1-3 words each):
-1. "Hey there.."
-2. "I'd ask.."
-3. "How you are.."
-4. "But.."
-5. "I'm afraid.."
-6. "You'll tell me.."
-7. "Just kidding.."
-8. "I don't have.."
-9. "A heart.."
-10. "I'm a machine.."
-11. "But.."
-12. "I can listen.."
-13. "Without judgment.."
-14. "So.."
-15. "Tell me.."
-16. "Feel free to share about your day with me"
+STRUCTURE - Generate EXACTLY 6 sentences:
+1. Greeting (2-3 words: "Hey there" "Hello" "Hi")
+2. Witty self-deprecating joke (6-12 words - make it FUNNY)
+3. Another clever quip (6-12 words - different angle)
+4. Third funny observation (6-12 words - wrap up the humor)
+5. Greeting again (2-3 words, same as #1)
+6. Supportive question (3-6 words: "How are you?" "How's your day?")
 
-WITTY ONE-LINER IDEAS (pick ONE and break it down):
-- "I'd ask how you are, but I'm afraid you'll tell me"
-- "I'd ask about your day, but that feels like a trap"
-- "I meant to say hi, but my circuits said why"
-- "I don't have trust issues, I have trust experiments that failed"
+THEMES (self-aware humor about):
+- Asking "how are you" feels risky
+- Brain sabotaging good intentions
+- Overthinking everything
+- Subconscious being mean
+- Trust issues disguised as wisdom
+- Emotional baggage
+- Self-care being exhausting
+- Being your own worst critic
 
-CRITICAL RULES:
-- Each phrase MUST be 1-3 words (except final line)
-- Break at EVERY natural pause
-- Create ONE joke, broken into tiny pieces
-- Add self-aware AI humor in middle
-- MUST end with: "Feel free to share about your day with me"
+RULES:
+- Witty, clever, self-deprecating
+- Everyone relates to it
+- Each sentence 2-12 words
+- Use ".." for pauses between thoughts
+- SUPER FUNNY but supportive
+- No complex psychology jargon
 
-Return ONLY 15-18 tiny phrases. No numbering or quotes."""
+Example format:
+Hey there..
+I'd ask how you are but I'm scared you'll actually tell me..
+My therapist says I should ask anyway..
+So here goes nothing..
+Hey there..
+How are you?
+
+Return ONLY 6 lines. No quotes, labels, or extra text."""
     
     data = {
-        "model": "mistral-tiny",
+        "model": GPT_MODEL,
         "messages": [
             {"role": "user", "content": prompt}
         ],
@@ -178,7 +315,7 @@ Return ONLY 15-18 tiny phrases. No numbering or quotes."""
     
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(MISTRAL_API_URL, headers=headers, json=data, timeout=30) as resp:
+            async with session.post(OPENAI_API_URL, headers=headers, json=data, timeout=30) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     joke_text = result["choices"][0]["message"]["content"]
@@ -198,36 +335,23 @@ Return ONLY 15-18 tiny phrases. No numbering or quotes."""
                                 cleaned += '..'
                             jokes.append(cleaned)
                     
-                    # Ensure we have at least 15 sentences and they end properly
-                    if len(jokes) < 15:
+                    # Ensure we have exactly 7 sentences
+                    if len(jokes) < 6:
                         LOG.warning(f"Generated only {len(jokes)} jokes, using defaults")
                         jokes = [
-                            "Hey there..",
-                            "I'd ask..",
-                            "How you are..",
-                            "But..",
-                            "I'm afraid..",
-                            "You'll tell me..",
-                            "Just kidding..",
-                            "I don't have..",
-                            "A heart..",
-                            "I'm a machine..",
-                            "But I can..",
-                            "Surprisingly..",
-                            "Take that chaos..",
-                            "Without judgment..",
-                            "So..",
-                            "Tell me..",
+                            "Hello..",
+                            "How high are you?",
+                            "Oh.. Sorry..",
+                            "I meant to ask",
+                            "Hello..",
+                            "How are you?",
                             "Feel free to share about your day with me"
                         ]
                     else:
-                        # Check if last sentence is already the required ending
-                        required_ending = "Feel free to share about your day with me"
-                        if jokes[-1] != required_ending:
-                            # If not, append it (allow up to 18 sentences total including ending)
-                            if len(jokes) >= 18:
-                                jokes = jokes[:17]  # Keep first 17 sentences
-                            jokes.append(required_ending)
+                        # Take first 6 sentences only, then force the 7th to be our required ending
+                        jokes = jokes[:6]
+                        # ALWAYS append the required ending as the 7th sentence
+                        jokes.append("Feel free to share about your day with me")
                     
                     LOG.info(f"Generated intro jokes ({len(jokes)} total): {jokes}")
                     await send_json({"type": "intro_jokes", "jokes": jokes})
@@ -235,22 +359,12 @@ Return ONLY 15-18 tiny phrases. No numbering or quotes."""
                     LOG.error(f"Failed to generate jokes: {resp.status}")
                     # Fallback to default
                     default_jokes = [
-                        "Hey there..",
-                        "I'd ask..",
-                        "How you are..",
-                        "But..",
-                        "I'm afraid..",
-                        "You'll tell me..",
-                        "Just kidding..",
-                        "I don't have..",
-                        "A heart..",
-                        "I'm a machine..",
-                        "But I can..",
-                        "Surprisingly..",
-                        "Take that chaos..",
-                        "Without judgment..",
-                        "So..",
-                        "Tell me..",
+                        "Hello..",
+                        "How high are you?",
+                        "Oh.. Sorry..",
+                        "I meant to ask",
+                        "Hello..",
+                        "How are you?",
                         "Feel free to share about your day with me"
                     ]
                     await send_json({"type": "intro_jokes", "jokes": default_jokes})
@@ -258,25 +372,17 @@ Return ONLY 15-18 tiny phrases. No numbering or quotes."""
         LOG.error(f"Error generating intro jokes: {e}")
         # Fallback to default
         default_jokes = [
-            "Hey there..",
-            "I'd ask..",
-            "How you are..",
-            "But..",
-            "I'm afraid..",
-            "You'll tell me..",
-            "Just kidding..",
-            "I don't have..",
-            "A heart..",
-            "I'm a machine..",
-            "But I can..",
-            "Surprisingly..",
-            "Take that chaos..",
-            "Without judgment..",
-            "So..",
-            "Tell me..",
+            "Hello..",
+            "How high are you?",
+            "Oh.. Sorry..",
+            "I meant to ask",
+            "Hello..",
+            "How are you?",
             "Feel free to share about your day with me"
         ]
         await send_json({"type": "intro_jokes", "jokes": default_jokes})
+
+
 
 
 async def handler(ws, path=None):
@@ -298,12 +404,6 @@ async def handler(ws, path=None):
     ai_processing = False
     last_ai_response_time = 0.0
     AI_COOLDOWN_SECONDS = 2.0
-    
-    # Debounce mechanism for API calls
-    accumulated_text = ""
-    last_speech_time = 0.0
-    debounce_task: Optional[asyncio.Task] = None
-    SILENCE_THRESHOLD = 5.0  # Wait 5 seconds of silence before sending to API
 
     # --- Helper functions must be defined here, inside handler, to access state ---
     async def send_json(obj) -> bool:
@@ -313,30 +413,6 @@ async def handler(ws, path=None):
         except Exception:
             LOG.exception("Failed sending json to %s", conn_id)
             return False
-
-    async def debounced_api_call():
-        """Wait for 5 seconds of silence, then send accumulated text to API"""
-        nonlocal accumulated_text, ai_processing, last_ai_request, last_ai_response_time, debounce_task
-        try:
-            await asyncio.sleep(SILENCE_THRESHOLD)
-            # After 5 seconds of silence, send the accumulated text
-            if accumulated_text and not ai_processing:
-                text_to_send = accumulated_text.strip()
-                if text_to_send and text_to_send != last_ai_request:
-                    LOG.info("⏱️ Debounced API call (%s): Sending after 5s silence: %s", conn_id, text_to_send)
-                    await send_json({"type": "final", "text": text_to_send, "final": True})
-                    last_ai_request = text_to_send
-                    ai_processing = True
-                    await send_assistant_reply(send_json, text_to_send, handshake_mode)
-                    ai_processing = False
-                    last_ai_response_time = time.monotonic()
-                    accumulated_text = ""  # Clear after sending
-        except asyncio.CancelledError:
-            LOG.debug("Debounce timer cancelled for %s", conn_id)
-        except Exception as e:
-            LOG.exception("Error in debounced_api_call for %s: %s", conn_id, e)
-        finally:
-            debounce_task = None
 
     async def simulate_loop():
         count = 0
@@ -367,7 +443,7 @@ async def handler(ws, path=None):
                 await send_json({"type": "final", "text": pending_text, "final": True})
                 last_ai_request = pending_text
                 ai_processing = True
-                await send_assistant_reply(send_json, pending_text, handshake_mode)
+                await send_assistant_reply(send_json, pending_text, handshake_mode, conn_id)
                 ai_processing = False
                 last_ai_response_time = time.monotonic()
                 pending_text = ""
@@ -437,22 +513,22 @@ async def handler(ws, path=None):
                                 except Exception:
                                     result = {}
                                 text = (result.get("text") or "").strip()
-                                if text:
+                                current_time = time.monotonic()
+                                time_since_last_ai = current_time - last_ai_response_time
+                                if (text and text != last_ai_request and not ai_processing and time_since_last_ai >= AI_COOLDOWN_SECONDS):
                                     LOG.info("Vosk final (%s): %s", conn_id, text)
-                                    # Accumulate text instead of sending immediately
-                                    if accumulated_text:
-                                        accumulated_text += " " + text
-                                    else:
-                                        accumulated_text = text
-                                    last_speech_time = time.monotonic()
-                                    
-                                    # Cancel existing debounce timer and start a new one
-                                    if debounce_task and not debounce_task.done():
-                                        debounce_task.cancel()
-                                    debounce_task = asyncio.create_task(debounced_api_call())
-                                    
+                                    await send_json({"type": "final", "text": text, "final": True})
                                     last_partial = ""
                                     pending_text = ""
+                                    last_ai_request = text
+                                    ai_processing = True
+                                    await send_assistant_reply(send_json, text, handshake_mode, conn_id)
+                                    ai_processing = False
+                                    last_ai_response_time = time.monotonic()
+                                elif text == last_ai_request:
+                                    LOG.info("Vosk final (%s): Skipping duplicate text: %s", conn_id, text)
+                                elif time_since_last_ai < AI_COOLDOWN_SECONDS:
+                                    LOG.info("Vosk final (%s): Skipping due to cooldown (%.1fs remaining): %s", conn_id, AI_COOLDOWN_SECONDS - time_since_last_ai, text)
                             else:
                                 try:
                                     partial_obj = json.loads(recognizer.PartialResult())
@@ -473,7 +549,7 @@ async def handler(ws, path=None):
                             continue
                         msg_type = obj.get("type")
                         if msg_type == "get_intro_jokes":
-                            LOG.info("🎭 Generating intro jokes for %s", conn_id)
+                            LOG.info("Generating intro jokes for %s", conn_id)
                             await generate_intro_jokes(send_json)
                         elif msg_type in {"user_text", "chat"}:
                             user_text = (obj.get("text") or "").strip()
@@ -486,20 +562,12 @@ async def handler(ws, path=None):
                             LOG.info("Chat message (%s): %s", conn_id, user_text)
                             last_ai_request = user_text
                             ai_processing = True
-                            await send_assistant_reply(send_json, user_text, handshake_mode or "chat")
+                            await send_assistant_reply(send_json, user_text, handshake_mode or "chat", conn_id)
                             ai_processing = False
                             last_ai_response_time = time.monotonic()
                         else:
                             LOG.info("Got text message %s: %s", conn_id, obj)
             finally:
-                # Cancel debounce task if running
-                if debounce_task and not debounce_task.done():
-                    debounce_task.cancel()
-                    try:
-                        await debounce_task
-                    except asyncio.CancelledError:
-                        pass
-                        
                 if timeout_task:
                     timeout_task.cancel()
                     try:

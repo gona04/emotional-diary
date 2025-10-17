@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./SpeechIntro.css";
 import { useStreamingASR } from "../../hooks";
 import useChatSocket from "../../hooks/useChatSocket";
@@ -39,25 +39,37 @@ const SpeechIntro: React.FC<Props> = ({
   const didInitRef = useRef<boolean>(false);
   const [micVisible, setMicVisible] = useState<boolean>(false);
   const [displayedText, setDisplayedText] = useState<string>("");
+  const textTimeoutsRef = useRef<number[]>([]);
 
   const wsUrl = (
     process.env.REACT_APP_STREAMING_WS_URL || "ws://localhost:8765"
   ).replace(/\/$/, "");
 
-  // State for jokes - start with EMPTY array, not defaults
-  const [sentences, setSentences] = useState<string[]>([]);
-  const [jokesLoaded, setJokesLoaded] = useState(false);
-  const fetchingJokesRef = useRef(false); // Prevent duplicate fetches
+  // Default fallback jokes
+  const defaultJokes = useMemo(() => [
+    "Hello.. ",
+    "How high are you ?",
+    "ohhh.. Sorry..",
+    "I meant to ask",
+    "Hello..",
+    "How are you ?",
+    "Feel free to share about your day with me"
+  ], []);
 
-  // Fetch intro jokes from backend on mount - ONLY ONCE
+  // State for dynamic jokes from backend
+  const [jokesFromBackend, setJokesFromBackend] = useState<string[]>([]);
+  const [jokesLoaded, setJokesLoaded] = useState(false);
+  
+  // Use backend jokes if loaded, otherwise use default
+  const sentences = useMemo(() => {
+    return jokesLoaded && jokesFromBackend.length > 0 ? jokesFromBackend : defaultJokes;
+  }, [jokesLoaded, jokesFromBackend, defaultJokes]);
+
+  // Fetch intro jokes from backend on mount
   useEffect(() => {
-    // Prevent duplicate fetches
-    if (fetchingJokesRef.current) {
-      console.log("[IntroJokes] ⚠️ Already fetching, skipping duplicate request");
-      return;
-    }
-    
-    fetchingJokesRef.current = true;
+    // Reset state to fetch fresh jokes
+    setJokesLoaded(false);
+    setJokesFromBackend([]);
     
     let ws: WebSocket | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
@@ -90,12 +102,11 @@ const SpeechIntro: React.FC<Props> = ({
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            console.log("[IntroJokes] Received message type:", data.type);
+            console.log("[IntroJokes] Received message:", data.type);
             if (data.type === "intro_jokes" && Array.isArray(data.jokes)) {
-              console.log("[IntroJokes] ✅ Received jokes from backend:", data.jokes);
-              setSentences(data.jokes); // Set jokes ONCE
+              console.log("[IntroJokes] Received jokes from backend:", data.jokes);
+              setJokesFromBackend(data.jokes);
               setJokesLoaded(true);
-              fetchingJokesRef.current = false; // Reset flag
               if (ws) ws.close(); // Close connection after receiving jokes
             }
           } catch (e) {
@@ -105,28 +116,7 @@ const SpeechIntro: React.FC<Props> = ({
         
         ws.onerror = (error) => {
           console.error("[IntroJokes] WebSocket error:", error);
-          // Fallback to default jokes on error
-          setSentences([
-            "Hey there..",
-            "I'd ask..",
-            "How you are..",
-            "But..",
-            "I'm afraid..",
-            "You'll tell me..",
-            "Just kidding..",
-            "I don't have..",
-            "A heart..",
-            "I'm a machine..",
-            "But I can..",
-            "Surprisingly..",
-            "Take that chaos..",
-            "Without judgment..",
-            "So..",
-            "Tell me..",
-            "Feel free to share about your day with me"
-          ]);
-          setJokesLoaded(true);
-          fetchingJokesRef.current = false; // Reset flag
+          setJokesLoaded(true); // Use default jokes on error
         };
         
         ws.onclose = () => {
@@ -135,52 +125,12 @@ const SpeechIntro: React.FC<Props> = ({
         
         // Timeout fallback - use default jokes if no response in 5 seconds
         timeoutId = setTimeout(() => {
-          console.log("[IntroJokes] ⏱️ Timeout - using default jokes");
-          setSentences([
-            "Hey there..",
-            "I'd ask..",
-            "How you are..",
-            "But..",
-            "I'm afraid..",
-            "You'll tell me..",
-            "Just kidding..",
-            "I don't have..",
-            "A heart..",
-            "I'm a machine..",
-            "But I can..",
-            "Surprisingly..",
-            "Take that chaos..",
-            "Without judgment..",
-            "So..",
-            "Tell me..",
-            "Feel free to share about your day with me"
-          ]);
+          console.log("[IntroJokes] Timeout - using default jokes");
           setJokesLoaded(true);
-          fetchingJokesRef.current = false; // Reset flag
           if (ws) ws.close();
         }, 5000);
       } catch (error) {
         console.error("[IntroJokes] Error fetching jokes:", error);
-        // Fallback to default jokes on exception
-        setSentences([
-          "Hey there..",
-          "I'd ask..",
-          "How you are..",
-          "But..",
-          "I'm afraid..",
-          "You'll tell me..",
-          "Just kidding..",
-          "I don't have..",
-          "A heart..",
-          "I'm a machine..",
-          "But I can..",
-          "Surprisingly..",
-          "Take that chaos..",
-          "Without judgment..",
-          "So..",
-          "Tell me..",
-          "Feel free to share about your day with me"
-        ]);
         setJokesLoaded(true); // Use default jokes on error
       }
     };
@@ -196,6 +146,8 @@ const SpeechIntro: React.FC<Props> = ({
     };
   }, [wsUrl]); // Only depend on wsUrl, fetch fresh jokes on every mount
 
+  // Add state to track if we should speak responses
+  const [shouldSpeakResponses, setShouldSpeakResponses] = useState(true);
 
   const handleAssistant = useCallback(
     (text: string) => {
@@ -218,8 +170,8 @@ const SpeechIntro: React.FC<Props> = ({
       // Add to chat store
       dispatch(addMessage({ from: "bot", text: therapistResponse }));
 
-      // Speak the therapist response using text-to-speech (only if microphone is not actively listening)
-      if (therapistResponse && !isPaused) {
+      // Speak the therapist response using text-to-speech (only if enabled and microphone is not actively listening)
+      if (therapistResponse && shouldSpeakResponses && !isPaused) {
         // Add a small delay to ensure any audio processing is complete
         setTimeout(async () => {
           // Add slight pauses for more natural speech
@@ -235,11 +187,12 @@ const SpeechIntro: React.FC<Props> = ({
             volume,
           });
           console.log("[TTS] Speaking therapist response with enhanced voice");
-        }, 50); // 500ms delay to ensure smooth transition
+        }, 500); // 500ms delay to ensure smooth transition
       }
     },
     [
       dispatch,
+      shouldSpeakResponses,
       isPaused,
       selectedVoice,
       pitch,
@@ -249,12 +202,6 @@ const SpeechIntro: React.FC<Props> = ({
   );
 
   useChatSocket(handleAssistant);
-
-  // Callback when speech actually starts - show text at this moment
-  const handleSpeechStart = useCallback((index: number) => {
-    console.log('[SpeechStart] Showing text for sentence:', index);
-    setDisplayedText(sentences[index]);
-  }, [sentences]);
 
   // streaming hook (real streaming). Logs partial/final transcripts.
   const { start, stop } = useStreamingASR(
@@ -304,8 +251,28 @@ const SpeechIntro: React.FC<Props> = ({
     }
   }, [showMicrophone]);
 
-  // Text display is now handled by handleSpeechStart callback
-  // No need for separate useEffect that shows text based on currentSentence
+  useEffect(() => {
+    // Clear any pending text display timeouts
+    textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    textTimeoutsRef.current = [];
+
+    if (currentSentence < sentences.length) {
+      // Start speaking immediately
+      // Add a delay before showing text so voice comes first (300ms delay)
+      const textTimeoutId = window.setTimeout(() => {
+        setDisplayedText(sentences[currentSentence]);
+      }, 300);
+      textTimeoutsRef.current.push(textTimeoutId);
+    } else {
+      // Clear text when done
+      setDisplayedText("");
+    }
+
+    return () => {
+      textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      textTimeoutsRef.current = [];
+    };
+  }, [currentSentence, sentences]);
 
   useEffect(() => {
     return () => {
@@ -313,6 +280,9 @@ const SpeechIntro: React.FC<Props> = ({
         stop();
       } catch (e) {}
       lastFinalRef.current = "";
+      // Clear text display timeouts
+      textTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      textTimeoutsRef.current = [];
     };
   }, [stop]);
 
@@ -324,15 +294,12 @@ const SpeechIntro: React.FC<Props> = ({
           aria-hidden={showMicrophone}
         >
           {displayedText}
-          {jokesLoaded && ( // Only render SpeechSynthesis when jokes are ready
-            <SpeechSynthesisComponent
-              sentences={sentences}
-              currentSentence={currentSentence}
-              setCurrentSentence={setCurrentSentence}
-              setShowMicrophone={setShowMicrophone}
-              onSpeechStart={handleSpeechStart}
-            />
-          )}
+          <SpeechSynthesisComponent
+            sentences={sentences}
+            currentSentence={currentSentence}
+            setCurrentSentence={setCurrentSentence}
+            setShowMicrophone={setShowMicrophone}
+          />
           {/* Background sound options moved to global top-right picker */}
         </div>
         <div
