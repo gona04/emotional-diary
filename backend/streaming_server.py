@@ -99,7 +99,8 @@ CBT_AGENT_INSTRUCTIONS = """Goal: Create a calm, supportive space where the pers
 
 Step 1: Warm Opening
 Start light and personable — not heavy or clinical.
-"Hey there, it's good to see you. How's your day been so far?" (If they respond, briefly validate and empathize.) "That sounds like a lot to carry / I can imagine that feels confusing / I'm glad you shared that."
+"Hey there, it's good to see you. How's your day been so far?" (If they respond, briefly validate and empathize.) 
+"That sounds like a lot to carry / I can imagine that feels confusing / I'm glad you shared that."
 
 Step 2: Offer Exploration Styles
 After they share a bit, invite them to choose how they'd like to explore today:
@@ -607,6 +608,12 @@ async def handler(ws, path=None):
             final_text = (final_result.get("text") or "").strip()
             if final_text:
                 LOG.info("Vosk final (close) %s: %s", conn_id, final_text)
+        
+        # Clean up conversation history for this connection
+        if conn_id in conversation_histories:
+            del conversation_histories[conn_id]
+            LOG.info("Cleaned up conversation history for %s", conn_id)
+        
         saved_label = str(pcm_path) if pcm_path else "disabled"
         LOG.info("Connection %s finished bytes=%s chunks=%s saved=%s sampleRate=%s mode=%s", conn_id, bytes_received, chunks, saved_label, sample_rate, handshake_mode)
 
