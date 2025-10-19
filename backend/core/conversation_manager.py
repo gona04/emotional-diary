@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, Optional
 from datetime import datetime, timedelta
-from ..models.conversation import ConversationSession
+from models.conversation import ConversationSession
 
 LOG = logging.getLogger("conversation_manager")
 

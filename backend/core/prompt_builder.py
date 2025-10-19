@@ -2,8 +2,8 @@
 
 import logging
 from typing import List, Optional
-from ..models.conversation import Message, ConversationStage, ConversationSession
-from ..exploration_methods import get_method
+from models.conversation import Message, ConversationStage, ConversationSession
+from exploration_methods import get_method
 
 LOG = logging.getLogger("prompt_builder")
 
@@ -97,10 +97,16 @@ Example: "You've done really well reflecting on this today.\""""
     def build_messages_for_llm(
         self,
         session: ConversationSession,
-        user_input: str,
+        user_input: Optional[str] = None,
         relevant_memories: Optional[List[str]] = None
     ) -> List[dict]:
-        """Build complete message array for LLM"""
+        """Build complete message array for LLM
+        
+        Args:
+            session: The conversation session
+            user_input: Optional user input to add (if not already in session)
+            relevant_memories: Optional memory snippets to inject
+        """
         
         # Build system prompt
         system_prompt = self.build_system_prompt(session, session.selected_method)
@@ -125,11 +131,12 @@ Example: "You've done really well reflecting on this today.\""""
                     "content": msg.content
                 })
         
-        # Add current user input
-        user_prompt = self.build_user_prompt(user_input, session)
-        messages.append({
-            "role": "user",
-            "content": user_prompt
-        })
+        # Add current user input if provided and not already in history
+        if user_input:
+            user_prompt = self.build_user_prompt(user_input, session)
+            messages.append({
+                "role": "user",
+                "content": user_prompt
+            })
         
         return messages

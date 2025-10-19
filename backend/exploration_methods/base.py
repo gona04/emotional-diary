@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
-from ..models.conversation import Message, MethodDefinition
+from models.conversation import Message, MethodDefinition
 
 
 class ExplorationMethod(ABC):

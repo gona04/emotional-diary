@@ -87,6 +87,11 @@ class ConversationSession:
         self.messages.append(message)
         self.last_active = datetime.now()
     
+    def add_message_from_text(self, role: str, content: str, metadata: Optional[Dict] = None) -> None:
+        """Convenience method to add message from role and content"""
+        message = Message(role=role, content=content, metadata=metadata or {})
+        self.add_message(message)
+    
     def get_context(self, max_tokens: int = 2000) -> List[Message]:
         """Get recent messages within token budget"""
         context = []
@@ -105,6 +110,15 @@ class ConversationSession:
         """Set the selected exploration method"""
         self.selected_method = method_id
         self.metadata["method"] = method_id
+    
+    def select_method(self, method_id: str) -> None:
+        """Alias for set_exploration_method"""
+        self.set_exploration_method(method_id)
+    
+    @property
+    def selected_method_id(self) -> Optional[str]:
+        """Get the selected method ID"""
+        return self.selected_method
     
     def transition_stage(self, new_stage: ConversationStage) -> bool:
         """Transition to new stage if valid"""

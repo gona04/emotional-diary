@@ -9,7 +9,7 @@ from .base import (
     SchemaExploration,
     MindfulnessInquiry
 )
-from ..models.conversation import MethodDefinition
+from models.conversation import MethodDefinition
 
 
 # Define all 15 exploration methods

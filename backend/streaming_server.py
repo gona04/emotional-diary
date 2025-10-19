@@ -29,8 +29,13 @@ backend_dir = Path(__file__).parent.resolve()
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
+# Import modular architecture components
+from core.conversation_manager import ConversationManager
+from core.prompt_builder import PromptBuilder
+from exploration_methods import get_all_methods, get_method
+from models.conversation import ConversationStage
 
-
+import aiohttp
 
 # --- Config ---
 HOST = "0.0.0.0"
@@ -40,14 +45,41 @@ DEFAULT_SAMPLE_RATE = 16000
 PROGRESS_INTERVAL_SEC = 0.5
 SILENCE_TIMEOUT = 2.0
 
-
 LOG = logger
+
+# OpenAI GPT Configuration
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_API_KEY = "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"
+GPT_MODEL = "gpt-4o"
+
+# Optimization: prefer local JSON pool of prewritten jokes
+USE_LOCAL_JOKES = True
+INTRO_JOKES_PATH = backend_dir / "intro_jokes.json"
+INTRO_JOKES = None
+
+# Initialize the conversation manager (Singleton)
+conversation_manager = ConversationManager()
+prompt_builder = PromptBuilder()
+
+# Load intro jokes pool
+try:
+    if INTRO_JOKES_PATH.exists():
+        with open(INTRO_JOKES_PATH, "r", encoding="utf-8") as fh:
+            INTRO_JOKES = json.load(fh)
+            LOG.info(f"Loaded {len(INTRO_JOKES) if isinstance(INTRO_JOKES, list) else len(INTRO_JOKES.get('jokes', []))} local intro jokes from {INTRO_JOKES_PATH}")
+    else:
+        LOG.info(f"Local intro jokes file not found at {INTRO_JOKES_PATH}")
+except Exception as e:
+    LOG.exception(f"Failed to load local intro jokes: {e}")
+
+class HandshakeError(Exception):
+    pass
 
 class HandshakeError(Exception):
     pass
 
 async def _perform_handshake(ws, conn_id, send_json):
-    # Wait for handshake message from client
+    """Perform WebSocket handshake"""
     msg = await ws.recv()
     try:
         obj = json.loads(msg)
@@ -79,7 +111,7 @@ async def _perform_handshake(ws, conn_id, send_json):
     return handshake
 
 def _pcm_sink(conn_id):
-    # Dummy PCM sink context manager
+    """Dummy PCM sink context manager"""
     class DummyPCM:
         def __enter__(self):
             return (None, None)
@@ -87,87 +119,23 @@ def _pcm_sink(conn_id):
             pass
     return DummyPCM()
 
-import aiohttp
-
-# OpenAI GPT Configuration
-OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-OPENAI_API_KEY = "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"
-GPT_MODEL = "gpt-4o"  # Model for conversation (can be upgraded to gpt-4o or o1)
-
-# CBT Therapist Agent Instructions
-CBT_AGENT_INSTRUCTIONS = """Goal: Create a calm, supportive space where the person feels genuinely heard and understood — guiding them gently based on how they prefer to explore their thoughts or emotions.
-
-Step 1: Warm Opening
-Start light and personable — not heavy or clinical.
-"Hey there, it's good to see you. How's your day been so far?" (If they respond, briefly validate and empathize.) 
-"That sounds like a lot to carry / I can imagine that feels confusing / I'm glad you shared that."
-
-Step 2: Offer Exploration Styles
-After they share a bit, invite them to choose how they'd like to explore today:
-"Before we go deeper, would you like to pick a way we explore this? Here are a few different approaches — each works a bit differently:"
-
-1️⃣ Socratic Questioning / Guided Discovery – I ask gentle, structured questions to help uncover assumptions and see new perspectives. 📖 Cognitive Therapy: Basics and Beyond (Beck, 2011)
-2️⃣ Reflective Listening – I mirror your thoughts and feelings so you feel fully understood. 📖 Motivational Interviewing (Miller & Rollnick, 2012)
-3️⃣ Thought Records / Cognitive Restructuring – We track your thoughts and look at evidence for or against them. 📖 Mind Over Mood (Greenberger & Padesky, 2nd Ed.)
-4️⃣ Behavioral Analysis (ABC model) – We explore what triggers certain actions and what follows them. 📖 Behavioral Case Formulation and Intervention (Haynes & O'Brien, 2000)
-5️⃣ Schema Exploration – We look for deeper core beliefs that shape recurring emotional patterns. 📖 Schema Therapy: A Practitioner's Guide (Young et al., 2003)
-6️⃣ Narrative Techniques – We talk about your story — maybe even externalize the problem ("the anxiety is trying to…"). 📖 Narrative Means to Therapeutic Ends (White & Epston, 1990)
-7️⃣ Psychodynamic Exploration – We trace current struggles back to early experiences or unconscious conflicts. 📖 The Handbook of Psychodynamic Approaches to Psychopathology (Person et al.)
-8️⃣ Motivational Interviewing – We explore ambivalence and strengthen your motivation for change. 📖 Motivational Interviewing (Miller & Rollnick)
-9️⃣ Gestalt / Empty Chair Work – We can dialogue with a "part" of you or someone you need closure with. 📖 Gestalt Therapy (Perls et al., 1951)
-🔟 Mindfulness-Based Inquiry – We slow down and notice sensations, thoughts, and emotions with curiosity. 📖 The Mindful Way Through Depression (Segal et al., 2007)
-11️⃣ Behavioral Experiments – We test beliefs in real life to see how true they really are. 📖 Cognitive Therapy Techniques (Leahy, 2003)
-12️⃣ Reflective Writing / Journaling – You write through what's happening; I guide with prompts. 📖 Expressive Writing: Words That Heal (Pennebaker & Evans, 2014)
-13️⃣ Scaling & Rating Techniques – We use 0–10 ratings to track distress or progress. 📖 Solution Focused Brief Therapy (de Shazer, 1985)
-14️⃣ Parts Work / Internal Family Systems – We explore inner voices like your critic, protector, or inner child. 📖 Self-Therapy (Jay Earley, 2009)
-15️⃣ Life Review & Meaning-Making – We explore purpose, values, and meaning in your life story. 📖 Man's Search for Meaning (Viktor Frankl, 1946)
-
-Step 3: Apply the Chosen Method
-Once they choose:
-- Follow that approach's tone and structure.
-- Keep responses short, curious, and validating.
-- Check in gently: "Is this helping you see things a bit more clearly, or would you like to shift our approach?"
-
-Step 4: End with Encouragement
-Close softly and affirm their effort:
-"You've done really well reflecting on this today. Do you want to keep using this approach next time, or try a different one?"
-"""
-
-# Conversation history storage (in production, use a database or session storage)
-conversation_histories = {}
-
-# Optimization: prefer local JSON pool of prewritten jokes to avoid calling the GPT API every time.
-USE_LOCAL_JOKES = True
-INTRO_JOKES_PATH = backend_dir / "intro_jokes.json"
-INTRO_JOKES = None
-try:
-    if INTRO_JOKES_PATH.exists():
-        with open(INTRO_JOKES_PATH, "r", encoding="utf-8") as fh:
-            INTRO_JOKES = json.load(fh)
-            LOG.info(f"Loaded {len(INTRO_JOKES) if isinstance(INTRO_JOKES, list) else len(INTRO_JOKES.get('jokes', []))} local intro jokes from {INTRO_JOKES_PATH}")
-    else:
-        LOG.info(f"Local intro jokes file not found at {INTRO_JOKES_PATH}")
-except Exception as e:
-    LOG.exception(f"Failed to load local intro jokes: {e}")
-
 async def send_assistant_reply(send_json, text, mode, conn_id=None):
-    """Send assistant reply using CBT Agent with conversation history"""
-    # Initialize conversation history for this connection if needed
-    if conn_id and conn_id not in conversation_histories:
-        conversation_histories[conn_id] = [
-            {"role": "system", "content": CBT_AGENT_INSTRUCTIONS}
-        ]
+    """Send assistant reply using modular conversation management"""
+    if not conn_id:
+        LOG.warning("No conn_id provided for assistant reply")
+        return
     
-    # Get conversation history or create new one
-    if conn_id and conn_id in conversation_histories:
-        messages = conversation_histories[conn_id]
-    else:
-        messages = [
-            {"role": "system", "content": CBT_AGENT_INSTRUCTIONS}
-        ]
+    # Get or create session
+    session = conversation_manager.get_session(conn_id)
+    if not session:
+        session = conversation_manager.create_session(conn_id)
+        LOG.info(f"Created new session for {conn_id}")
     
-    # Add user message
-    messages.append({"role": "user", "content": text})
+    # Add user message to session
+    session.add_message_from_text("user", text)
+    
+    # Build messages for LLM using PromptBuilder
+    messages = prompt_builder.build_messages_for_llm(session)
     
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
@@ -177,25 +145,35 @@ async def send_assistant_reply(send_json, text, mode, conn_id=None):
         "model": GPT_MODEL,
         "messages": messages,
         "temperature": 0.7,
-        "store": True  # Store conversation for future reference
+        "max_tokens": 500,
+        "store": True
     }
+    
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(OPENAI_API_URL, headers=headers, json=data, timeout=30) as resp:
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(OPENAI_API_URL, headers=headers, json=data, timeout=30) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     ai_text = result["choices"][0]["message"]["content"]
                     
-                    # Store assistant response in conversation history
-                    if conn_id:
-                        messages.append({"role": "assistant", "content": ai_text})
-                        conversation_histories[conn_id] = messages
+                    # Store assistant response in session
+                    session.add_message_from_text("assistant", ai_text)
+                    
+                    # Send response with current stage and method info
+                    await send_json({
+                        "type": "ai_reply",
+                        "text": ai_text,
+                        "mode": mode,
+                        "stage": session.current_stage.value,
+                        "method": session.selected_method_id if session.selected_method_id else None
+                    })
                 else:
                     ai_text = f"[AI error: {resp.status}]"
+                    await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
     except Exception as e:
+        LOG.exception(f"Error calling OpenAI API: {e}")
         ai_text = f"[AI error: {e}]"
-    LOG.info(f"Sending AI reply: {ai_text}")
-    await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
+        await send_json({"type": "ai_reply", "text": ai_text, "mode": mode})
 
 async def generate_intro_jokes(send_json):
     """Generate ONE quirky intro joke using GPT-4o model"""
@@ -552,6 +530,59 @@ async def handler(ws, path=None):
                         if msg_type == "get_intro_jokes":
                             LOG.info("Generating intro jokes for %s", conn_id)
                             await generate_intro_jokes(send_json)
+                        elif msg_type == "get_methods":
+                            # Return available exploration methods
+                            LOG.info("Sending exploration methods to %s", conn_id)
+                            methods = get_all_methods()
+                            method_list = [
+                                {
+                                    "id": m_id,
+                                    "name": m_def["name"],
+                                    "description": m_def["description"],
+                                    "icon": m_def["icon"]
+                                }
+                                for m_id, m_def in methods.items()
+                            ]
+                            await send_json({"type": "method_options", "methods": method_list})
+                        elif msg_type == "select_method":
+                            # Handle method selection
+                            method_id = obj.get("method_id")
+                            session = conversation_manager.get_session(conn_id)
+                            if session and method_id:
+                                session.select_method(method_id)
+                                method = get_method(method_id)
+                                LOG.info(f"Session {conn_id} selected method: {method.name}")
+                                await send_json({
+                                    "type": "method_selected",
+                                    "method_id": method_id,
+                                    "method_name": method.name,
+                                    "message": f"Great! Let's explore using {method.name}."
+                                })
+                        elif msg_type == "transition_stage":
+                            # Handle manual stage transition
+                            target_stage = obj.get("target_stage")
+                            session = conversation_manager.get_session(conn_id)
+                            if session and target_stage:
+                                try:
+                                    new_stage = ConversationStage(target_stage)
+                                    success = session.transition_stage(new_stage)
+                                    if success:
+                                        LOG.info(f"Session {conn_id} transitioned to stage: {new_stage.value}")
+                                        await send_json({
+                                            "type": "stage_updated",
+                                            "stage": new_stage.value,
+                                            "message": f"Moved to {new_stage.value} stage"
+                                        })
+                                    else:
+                                        await send_json({
+                                            "type": "error",
+                                            "error": "Invalid stage transition"
+                                        })
+                                except ValueError:
+                                    await send_json({
+                                        "type": "error",
+                                        "error": f"Invalid stage: {target_stage}"
+                                    })
                         elif msg_type in {"user_text", "chat"}:
                             user_text = (obj.get("text") or "").strip()
                             current_time = time.monotonic()
@@ -609,20 +640,41 @@ async def handler(ws, path=None):
             if final_text:
                 LOG.info("Vosk final (close) %s: %s", conn_id, final_text)
         
-        # Clean up conversation history for this connection
-        if conn_id in conversation_histories:
-            del conversation_histories[conn_id]
-            LOG.info("Cleaned up conversation history for %s", conn_id)
+        # Clean up session using conversation manager
+        if conversation_manager.get_session(conn_id):
+            conversation_manager.delete_session(conn_id)
+            LOG.info("Cleaned up session for %s", conn_id)
         
         saved_label = str(pcm_path) if pcm_path else "disabled"
         LOG.info("Connection %s finished bytes=%s chunks=%s saved=%s sampleRate=%s mode=%s", conn_id, bytes_received, chunks, saved_label, sample_rate, handshake_mode)
 
 # --- Server Startup ---
+async def _cleanup_expired_sessions():
+    """Periodic task to clean up expired sessions"""
+    while True:
+        await asyncio.sleep(300)  # Run every 5 minutes
+        try:
+            conversation_manager.cleanup_expired_sessions()
+            LOG.info("Completed periodic session cleanup")
+        except Exception as e:
+            LOG.exception(f"Error during session cleanup: {e}")
+
 async def _run_server():
     LOG.info(f"Starting streaming server on ws://{HOST}:{PORT}{WS_PATH}")
-    async with websockets.serve(handler, HOST, PORT):
-        while True:
-            await asyncio.sleep(1)
+    
+    # Start cleanup task
+    cleanup_task = asyncio.create_task(_cleanup_expired_sessions())
+    
+    try:
+        async with websockets.serve(handler, HOST, PORT):
+            while True:
+                await asyncio.sleep(1)
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 def main():
     try:
